@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import moment from 'moment'
 import validator from 'validator'
-import { Redis } from '@/libs/lib.redis'
-import { ISignatureMetadata } from '@/libs/lib.jwt'
+import { Redis } from '@libs/lib.redis'
+import { ISignatureMetadata } from '@libs/lib.jwt'
 import { Encryption } from '@helpers/helper.encryption'
 
 export const signature = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
