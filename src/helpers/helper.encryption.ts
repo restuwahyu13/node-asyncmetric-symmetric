@@ -37,11 +37,13 @@ export class Encryption {
     if (['PUT', 'PATCH', 'POST'].includes(req.method)) {
       this.asymmetricPayload = Buffer.from(JSON.stringify(req.body))
       this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, getSignature.privKey)
-      this.symmetricPayload += req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
+      this.symmetricPayload +=
+        req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
     } else {
       this.asymmetricPayload = Buffer.from(JSON.stringify(req.params || req.query || ''))
       this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, getSignature.privKey)
-      this.symmetricPayload += req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
+      this.symmetricPayload +=
+        req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
     }
 
     const verifiedAsymmetricSignature = crypto.verify('RSA-SHA256', Buffer.from(this.asymmetricPayload), getSecretKey.pubKey, this.asymmetricSignature)
@@ -49,10 +51,7 @@ export class Encryption {
 
     const symmetricOutput: string = Encryption.HMACSHA512Sign(getSignature.privKey, 'base64', this.symmetricPayload)
     if (!req.headers['X-Timestamp'] && !req.headers['X-Signature']) {
-      const aesCipher: Buffer = await Encryption.AES256Encrypt(this.aesSecretKey, this.symmetricPayload)
-
-      this.redis.setExCacheData(symmetricOutput.toString().substring(0, 10), this.signatureExpired, symmetricOutput)
-      this.redis.setExCacheData(symmetricOutput.toString().substring(0, 5), this.signatureExpired, aesCipher.toString('base64'))
+      this.redis.setExCacheData(symmetricOutput.toString().substring(0, 5), this.signatureExpired, this.symmetricPayload)
 
       res.set('X-Signature', symmetricOutput.toString())
       res.set('X-Timestamp', dateNow)

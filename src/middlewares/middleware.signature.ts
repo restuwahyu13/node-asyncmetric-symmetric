@@ -8,40 +8,36 @@ import { Encryption } from '@helpers/helper.encryption'
 export const signature = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const redis: InstanceType<typeof Redis> = new Redis(0)
-    const xSignature: any = req.headers['x-signature']
-    const xTimestamp: any = req.headers['x-timestamp']
-    const dateNow: string = moment().format('YYYY-MM-DD HH:mm:ss')
+
+    const headers: Record<string, any> = req.headers
+    if (!headers.hasOwnProperty('x-signature')) throw new Error('X-Signature is required on headers')
+    else if (!headers.hasOwnProperty('x-timestamp')) throw new Error('X-Timestamp is required on headers')
+
+    const xSignature: string = req.headers['x-signature'] as any
+    const xTimestamp: string = req.headers['x-timestamp'] as any
 
     const key: string = req['user']['email']
-    const redisKey: string[] = [`${key}:activity`, `${key}:jwt`, `${key}:secretkey`, `${key}:signature`]
+    const dateNow: string = moment().format('YYYY-MM-DD HH:mm:ss')
 
-    if (!xSignature) throw new Error('X-Signature is required on headers')
-    else if (!validator.isBase64(xTimestamp)) throw new Error('X-Signature must be base64 format')
-    else if (!xTimestamp) throw new Error('X-Timestamp is required on headers')
+    if (validator.isEmpty(xSignature)) throw new Error('X-Signature not to be empty')
+    else if (validator.isEmpty(xTimestamp)) throw new Error('X-Timestamp not to be empty')
+    else if (!validator.isBase64(xSignature)) throw new Error('X-Signature must be base64 format')
     else if (!validator.isDate(xTimestamp)) throw new Error('X-Timestamp must be date format')
 
-    const checkSignatureKey: number = await redis.keyCacheDataExist(xSignature.substring(0, 10))
-    if (!checkSignatureKey) {
-      for (let i of redisKey) {
-        if ([`${key}:secretkey`, `${key}:signature`].includes(i)) await redis.hdelCacheData('jwt', i)
-        else await redis.delCacheData(i)
-      }
-      throw new Error('X-Signature expired')
-    }
-
-    const [getHmacSigKey, getHmacSigPayloadKey, getHmacSig, getHmacSigPayload, signature]: [number, number, string, string, ISignatureMetadata] = await Promise.all([
-      redis.keyCacheDataExist(xSignature.substring(0, 10)),
+    const [getHmacSigPayloadKey, getHmacSigPayload, signature]: [number, string, ISignatureMetadata] = await Promise.all([
       redis.keyCacheDataExist(xSignature.substring(0, 5)),
-      redis.getCacheData(xSignature.substring(0, 10)),
       redis.getCacheData(xSignature.substring(0, 5)),
-      redis.hgetCacheData('jwt', `${key}:signature`)
+      redis.hgetCacheData('jwt', `${key}signature`)
     ])
 
-    if (!getHmacSigKey || !getHmacSigPayloadKey || !signature || xSignature != getHmacSig) throw new Error('X-Signature invalid')
-    else if (xTimestamp < dateNow) throw new Error('X-Timestamp expired')
+    if (!getHmacSigPayloadKey || !getHmacSigPayload || !signature) throw new Error('X-Signature invalid')
+    const isVerified: boolean = Encryption.HMACSHA512Verify(signature.privKey, 'base64', getHmacSigPayload, xSignature)
 
-    const isVerified: boolean = Encryption.HMACSHA512Verify(signature.privKey, 'base64', getHmacSigPayload, getHmacSig)
     if (!isVerified) throw new Error('X-Signature not verified')
+    else if (xTimestamp < dateNow) {
+      await Promise.all([redis.delCacheData(xSignature.substring(0, 5)), delete req.headers['X-Signature'], delete req.headers['X-Timestamp']])
+      throw new Error('X-Timestamp expired')
+    }
 
     next()
   } catch (e: any) {
