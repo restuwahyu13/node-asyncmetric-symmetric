@@ -32,7 +32,7 @@ export const signature = async (req: Request, res: Response, next: NextFunction)
       redis.getCacheData(signature.cipherKey.substring(0, 5))
     ])
 
-    if (!getHmacSigPayloadKey || !getHmacSigPayload || !signature) throw new Error('X-Signature invalid')
+    if (!getHmacSigPayloadKey || !getHmacSigPayload) throw new Error('X-Signature invalid')
     const isVerified: boolean = Encryption.HMACSHA512Verify(signature.privKey, 'base64', getHmacSigPayload, xSignature)
 
     if (!isVerified) throw new Error('X-Signature not verified')
