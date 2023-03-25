@@ -17,12 +17,11 @@ export const auth = async (req: Request, res: Response, next: NextFunction): Pro
     const autorization: string = headers.autorization.split('Bearer ')[1]
     if (!validator.isJWT(autorization)) throw new Error('JWT format is not valid')
 
-    const token: string | null = await redis.getCacheData(`${key}:token`)
+    const token: string | null = await redis.getCacheData(`${key}token`)
     if (autorization != token) throw new Error('Unauthorized JWT token miss match')
 
-    const isVerified: any = await jwt.verify(key, autorization as string)
-    if (typeof isVerified == 'string' && Array.isArray(isVerified.match('signature'))) throw new Error('Unauthorized JWT token is not verified')
-    if (typeof isVerified == 'string' && Array.isArray(isVerified.match('expired'))) throw new Error('Unauthorized JWT token is expired')
+    const isVerify: any = await jwt.verify(key, autorization as string)
+    if (!validator.isJWT(isVerify)) throw new Error(isVerify)
 
     req['user'] = {}
 

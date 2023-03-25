@@ -2,10 +2,12 @@ import 'dotenv/config'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Request } from 'express'
+import * as jose from 'jose'
+
 import { faker } from '@faker-js/faker'
-import { Redis } from '@/libs/lib.redis'
+import { Redis } from '@libs/lib.redis'
 import { session } from '@helpers/helper.session'
-import { Encryption } from '@/helpers/helper.encryption'
+import { Encryption } from '@helpers/helper.encryption'
 
 export interface ISecretMetadata {
   pubKey: string
@@ -20,6 +22,8 @@ export interface ISignatureMetadata {
 }
 
 export class JsonWebToken {
+  private keyLength: number = 1024
+  private keyLengthSizes: number[] = []
   private jwtToken: string = ''
   private jwtSecretKey: string = ''
   private jwtExpired: number = 600
@@ -39,15 +43,21 @@ export class JsonWebToken {
     this.jwtSecretKey = process.env.JWT_SECRET_KEY!
     this.jwtExpired = +process.env.JWT_EXPIRED!
     this.redis = new Redis(0)
+    this.keyLengthSizes = [1024, 2048, 4096]
   }
 
   private async createSecret(prefix: string, expired: number): Promise<ISecretMetadata> {
     const secretKeyExist: number = await this.redis.keyCacheDataExist(`${prefix}secretkey`)
 
     if (!secretKeyExist) {
+      for (let i = 0; i < this.keyLengthSizes.length; i++) {
+        this.keyLength = this.keyLengthSizes[Math.floor(Math.random() * this.keyLengthSizes.length)]
+        break
+      }
+
       const cipherData: Buffer = await Encryption.AES256Encrypt(this.jwtSecretKey, this.jwtSecretKey)
       const genCertifiate: crypto.KeyPairSyncResult<string, string> = crypto.generateKeyPairSync('rsa', {
-        modulusLength: 4096,
+        modulusLength: this.keyLength,
         publicKeyEncoding: {
           type: 'pkcs1',
           format: 'pem'
@@ -136,9 +146,17 @@ export class JsonWebToken {
       const secretkey: ISecretMetadata = await this.redis.hgetCacheData('jwt', `${key}secretkey`)
       const signature: ISignatureMetadata = await this.redis.hgetCacheData('jwt', `${key}signature`)
 
-      const verifyToken: jwt.JwtPayload = jwt.verify(token!, secretkey.pubKey) as any
-      if (!verifyToken) throw new Error('Invalid signature')
-      else if (verifyToken && !Array.isArray(signature.sigKey.match(verifyToken.jti!))) throw new Error('Invalid signature')
+      const rsaPubKey: crypto.KeyObject = crypto.createPublicKey(secretkey.pubKey)
+      if (!rsaPubKey) throw new Error('Unauthorized JWT token signature is not verified')
+
+      const verifyTokenSignature: jose.CompactVerifyResult = await jose.compactVerify(key, rsaPubKey)
+      if (!verifyTokenSignature.payload) throw new Error('Unauthorized JWT token signature is not verified')
+
+      const verifyTokenSignatureParse: jwt.JwtPayload = JSON.parse(verifyTokenSignature.toString())
+      const verifyToken: string = jwt.verify(token!, rsaPubKey) as any
+
+      if (!verifyToken) throw new Error('Unauthorized JWT token signature is not verified')
+      else if (verifyToken && !Array.isArray(signature.sigKey.match(verifyTokenSignatureParse.jti))) throw new Error('Unauthorized JWT token signature is not verified')
 
       return key
     } catch (e: any) {
