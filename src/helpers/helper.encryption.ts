@@ -51,7 +51,7 @@ export class Encryption {
 
     const symmetricOutput: string = Encryption.HMACSHA512Sign(getSignature.privKey, 'base64', this.symmetricPayload)
     if (!req.headers['X-Timestamp'] && !req.headers['X-Signature']) {
-      this.redis.setExCacheData(symmetricOutput.toString().substring(0, 5), this.signatureExpired, this.symmetricPayload)
+      this.redis.setExCacheData(getSignature.cipherKey.substring(0, 5), this.signatureExpired, this.symmetricPayload)
 
       res.set('X-Signature', symmetricOutput.toString())
       res.set('X-Timestamp', dateNow)
