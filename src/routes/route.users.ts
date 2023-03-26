@@ -13,7 +13,7 @@ export class RouteUsers {
   }
 
   main(): Router {
-    this.router.get('/register', [...DTOUsersValidation.register(), validator], this.users.register())
+    this.router.post('/register', [...DTOUsersValidation.register(), validator], this.users.register())
     this.router.post('/login', [...DTOUsersValidation.login(), validator], this.users.login())
 
     return this.router

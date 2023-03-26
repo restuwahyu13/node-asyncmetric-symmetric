@@ -1,12 +1,12 @@
 import { ValidationChain, check } from 'express-validator'
 
 export interface DTORegister {
-  emaail: string
+  email: string
   password: string
 }
 
 export interface DTOLogin {
-  emaail: string
+  email: string
   password: string
 }
 

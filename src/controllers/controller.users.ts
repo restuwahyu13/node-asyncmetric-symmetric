@@ -25,7 +25,7 @@ export class ControllerUsers {
   login(): Handler {
     return async (req: Request, res: Response, next: NextFunction): Promise<http.OutgoingMessage> => {
       try {
-        const service: APIResponse = await this.users.login(req.body as any)
+        const service: APIResponse = await this.users.login(req, req.body as any)
         return res.status(service.stat_code).json(service)
       } catch (e: any) {
         return res.status(e.stat_code).json(e)

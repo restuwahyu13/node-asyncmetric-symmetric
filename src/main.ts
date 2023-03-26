@@ -2,7 +2,7 @@ import 'express-async-errors'
 import 'dotenv/config'
 import express, { Express } from 'express'
 import http, { Server } from 'http'
-import Knex from 'knex'
+import knex, { Knex } from 'knex'
 import bodyparser from 'body-parser'
 import Objection from 'objection'
 import cors from 'cors'
@@ -27,7 +27,7 @@ class App {
   constructor() {
     this.app = express()
     this.server = http.createServer(this.app)
-    this.knex = Knex(knexfile[process.env.NODE_ENV])
+    this.knex = knex(knexfile[process.env.NODE_ENV])
     this.roles = new RouteRoles()
     this.todos = new RouteTodos()
     this.users = new RouteUsers()
@@ -41,7 +41,7 @@ class App {
   private middleware(): void {
     this.app.use(bodyparser.json({ limit: '1mb' }))
     this.app.use(bodyparser.raw({ limit: '1mb' }))
-    this.app.use(bodyparser.urlencoded({ extended: true }))
+    this.app.use(bodyparser.urlencoded({ extended: false }))
     this.app.use(helmet())
     this.app.use(
       cors({

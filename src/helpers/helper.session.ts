@@ -1,20 +1,23 @@
 import { Redis } from '@libs/lib.redis'
+import { Sessions } from '@models/model.sessions'
 
-export const session = async (key: string): Promise<boolean> => {
+export const session = async (prefix: string): Promise<boolean> => {
   const redis: InstanceType<typeof Redis> = new Redis(0)
+  const sessions: InstanceType<typeof Sessions> = new Sessions()
   const sessionLimit: number = +process.env.SESSION_LOGIN_LIMIT
 
-  const redisKey: string[] = [`${key}session`, `${key}token`, `${key}secretkey`, `${key}signature`]
-  const sessionKey: number = parseInt((await redis.keyCacheDataExist(`${key}session`)) as any)
+  const redisKey: string[] = [`${prefix}-session`, `${prefix}-token`, `${prefix}-signatures`, 'secretkey', 'signature']
+  const sessionKey: number = +(await redis.keyCacheDataExist(`${prefix}-session`))
 
-  if (!sessionKey) await redis.config().lpush(`${key}session`, 1)
+  if (!sessionKey) await redis.config().lpush(`${prefix}-session`, 1)
   else if (sessionKey) {
-    const sessionInc: number = +(await redis.config().llen(`${key}session`))
-    await redis.config().lpush(`${key}session`, sessionInc + 1)
+    const sessionInc: number = +(await redis.config().llen(`${prefix}-session`))
+    await redis.config().lpush(`${prefix}-session`, sessionInc + 1)
 
     if (sessionInc >= sessionLimit) {
+      await sessions.model().delete().where({ user_id: prefix, type: 'login' })
       for (let i of redisKey) {
-        if ([`${key}secretkey`, `${key}signature`].includes(i)) await redis.hdelCacheData('jwt', i)
+        if ([`${prefix}-signatures`, 'secretkey', 'signature'].includes(i)) await redis.hdelCacheData(`${prefix}-credentials`, i)
         else await redis.delCacheData(i)
       }
       return false

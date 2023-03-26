@@ -15,17 +15,17 @@ export interface ISecretMetadata {
 }
 
 export interface ISignatureMetadata {
-  privKey: crypto.KeyObject | crypto.PrivateKeyInput
+  privKey: string
   sigKey: string
   cipherKey: string
 }
 
 export class JsonWebToken {
-  private keyLength: number = 1024
+  private keyLength: number = 2048
   private keyLengthSizes: number[] = []
   private jwtToken: string = ''
   private jwtSecretKey: string = ''
-  private jwtExpired: number = 600
+  private jwtExpired: number = 500
   private redis: InstanceType<typeof Redis>
   private certMetadata: ISecretMetadata = {
     pubKey: '',
@@ -42,11 +42,11 @@ export class JsonWebToken {
     this.jwtSecretKey = process.env.JWT_SECRET_KEY!
     this.jwtExpired = +process.env.JWT_EXPIRED!
     this.redis = new Redis(0)
-    this.keyLengthSizes = [1024, 2048, 4096]
+    this.keyLengthSizes = [2048, 4096]
   }
 
-  private async createSecret(prefix: string, expired: number): Promise<ISecretMetadata> {
-    const secretKeyExist: number = await this.redis.keyCacheDataExist(`${prefix}secretkey`)
+  private async createSecret(prefix: string): Promise<ISecretMetadata> {
+    const secretKeyExist: number = +(await this.redis.hkeyCacheDataExist(`${prefix}-credentials`, 'secretkey'))
 
     if (!secretKeyExist) {
       for (let i = 0; i < this.keyLengthSizes.length; i++) {
@@ -74,20 +74,20 @@ export class JsonWebToken {
         privKey: genCertifiate.privateKey,
         cipherKey: cipherData.toString('hex')
       }
-      await this.redis.hsetCacheData('jwt', `${prefix}secretkey`, expired, this.certMetadata as any)
+      await this.redis.hsetCacheData(`${prefix}-credentials`, 'secretkey', this.jwtExpired, this.certMetadata as any)
     } else {
-      this.certMetadata = (await this.redis.hgetCacheData('jwt', `${prefix}secretkey`)) as any
+      this.certMetadata = (await this.redis.hgetCacheData(`${prefix}-credentials`, 'secretkey')) as any
     }
 
     return this.certMetadata
   }
 
   private async createSignature(prefix: string, body: any): Promise<ISignatureMetadata> {
-    const sigKeyExist: number = await this.redis.keyCacheDataExist(`${prefix}signature`)
+    const sigKeyExist: number = +(await this.redis.hkeyCacheDataExist(`${prefix}-credentials`, 'signature')) as any
 
     if (!sigKeyExist) {
-      const secretKey: ISecretMetadata = await this.createSecret(prefix, this.jwtExpired)
-      const rsaPrivateKey: crypto.KeyObject = crypto.createPrivateKey({
+      const secretKey: ISecretMetadata = await this.createSecret(prefix)
+      const rsaPrivKey: crypto.KeyObject = crypto.createPrivateKey({
         key: Buffer.from(secretKey.privKey),
         type: 'pkcs8',
         format: 'pem',
@@ -95,43 +95,49 @@ export class JsonWebToken {
       })
 
       const bodyPayload: string = JSON.stringify(body)
-      const signature: Buffer = crypto.sign('RSA-SHA256', Buffer.from(bodyPayload), rsaPrivateKey)
+      const signature: Buffer = crypto.sign('RSA-SHA256', Buffer.from(bodyPayload), rsaPrivKey)
 
       const verifiedSignature = crypto.verify('RSA-SHA256', Buffer.from(bodyPayload), secretKey.pubKey, signature)
       if (!verifiedSignature) throw new Error('Credential not verified')
 
       const signatureOutput: string = signature.toString('hex')
       this.sigMetadata = {
-        privKey: rsaPrivateKey,
+        privKey: secretKey.privKey,
         sigKey: signatureOutput,
         cipherKey: secretKey.cipherKey
       }
-      await this.redis.hsetCacheData('jwt', `${prefix}signature`, this.jwtExpired, this.certMetadata as any)
+      await this.redis.hsetCacheData(`${prefix}-credentials`, 'signature', this.jwtExpired, this.sigMetadata as any)
     } else {
-      this.sigMetadata = (await this.redis.hgetCacheData('jwt', `${prefix}signature`)) as any
+      this.sigMetadata = (await this.redis.hgetCacheData(`${prefix}-credentials`, 'signature')) as any
     }
 
     return this.sigMetadata
   }
 
-  async sign(req: Request, key: string, body: any): Promise<any> {
+  async sign(req: Request, prefix: string, body: any): Promise<any> {
     try {
-      const sessionExist: boolean = await session(key)
-      const tokenExist: number = await this.redis.keyCacheDataExist(`${key}token`)
+      const sessionExist: boolean = await session(prefix)
+      const tokenExist: number = await this.redis.keyCacheDataExist(`${prefix}-token`)
 
-      const signature: ISignatureMetadata = await this.createSignature(key, body)
-
+      const signature: ISignatureMetadata = await this.createSignature(prefix, body)
       const payload = req.path + '.' + req.method + '.' + signature.sigKey.toLowerCase()
-      const symmetricEncrypt: string = Encryption.HMACSHA512Sign(signature.cipherKey, 'hex', payload)
 
-      this.jwtToken = jwt.sign({ key: symmetricEncrypt }, signature.privKey as crypto.KeyObject, {
+      const symmetricEncrypt: string = Encryption.HMACSHA512Sign(signature.cipherKey, 'hex', payload)
+      const rsaPrivKey: crypto.KeyObject = crypto.createPrivateKey({
+        key: Buffer.from(signature.privKey),
+        type: 'pkcs8',
+        format: 'pem',
+        passphrase: signature.cipherKey
+      })
+
+      this.jwtToken = jwt.sign({ key: symmetricEncrypt }, rsaPrivKey, {
         jwtid: signature.sigKey.substring(0, 32),
         audience: faker.name.firstName().toLowerCase(),
         algorithm: 'RS256',
         expiresIn: this.jwtExpired
       })
 
-      if (sessionExist && !tokenExist) await this.redis.setExCacheData(`${key}token`, this.jwtExpired, this.jwtToken)
+      if (sessionExist && !tokenExist) await this.redis.setExCacheData(`${prefix}-token`, this.jwtExpired, this.jwtToken)
       else if (!sessionExist && !tokenExist) throw new Error('Session expired')
 
       return this.jwtToken
@@ -140,24 +146,24 @@ export class JsonWebToken {
     }
   }
 
-  async verify(key: string, token: string): Promise<any> {
+  async verify(prefix: string, token: string): Promise<any> {
     try {
-      const secretkey: ISecretMetadata = await this.redis.hgetCacheData('jwt', `${key}secretkey`)
-      const signature: ISignatureMetadata = await this.redis.hgetCacheData('jwt', `${key}signature`)
+      const secretkey: ISecretMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'secretkey')
+      const signature: ISignatureMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'signature')
 
       const rsaPubKey: crypto.KeyObject = crypto.createPublicKey(secretkey.pubKey)
       if (!rsaPubKey) throw new Error('Unauthorized JWT token signature is not verified')
 
-      const verifyTokenSignature: jose.CompactVerifyResult = await jose.compactVerify(key, rsaPubKey)
-      if (!verifyTokenSignature.payload) throw new Error('Unauthorized JWT token signature is not verified')
+      const verifyTokenSignature: jose.CompactVerifyResult = await jose.compactVerify(token, rsaPubKey)
+      if (!verifyTokenSignature) throw new Error('Unauthorized JWT token signature is not verified')
 
-      const verifyTokenSignatureParse: jwt.JwtPayload = JSON.parse(verifyTokenSignature.toString())
+      const verifyTokenSignatureParse: jwt.JwtPayload = JSON.parse(verifyTokenSignature.payload.toString())
       const verifyToken: string = jwt.verify(token!, rsaPubKey) as any
 
       if (!verifyToken) throw new Error('Unauthorized JWT token signature is not verified')
       else if (verifyToken && !Array.isArray(signature.sigKey.match(verifyTokenSignatureParse.jti))) throw new Error('Unauthorized JWT token signature is not verified')
 
-      return key
+      return token
     } catch (e: any) {
       return e.message
     }

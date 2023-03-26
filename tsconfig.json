@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": "src",
     "outDir": "dist",
-    "target": "ESNext",
+    "target": "ES2018",
     "module": "CommonJS",
     "moduleResolution": "Node",
     "typeRoots": ["node_modules/@types"],

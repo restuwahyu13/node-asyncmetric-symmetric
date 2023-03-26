@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
 import path from 'path'
-import Knex from 'knex'
+import { Knex } from 'knex'
 
 config({ path: '../.env' })
 
@@ -25,7 +25,7 @@ const connection: Record<string, any> = {
 export const development: Knex.Config = {
   client: connection.client,
   connection: connection.development,
-  pool: { min: 1, max: 5 },
+  // pool: { min: 1, max: 5 },
   debug: process.env.NODE_ENV == 'development' ? true : false,
   asyncStackTraces: process.env.NODE_ENV == 'development' ? true : false,
   acquireConnectionTimeout: 600000,
@@ -43,10 +43,10 @@ export const development: Knex.Config = {
   }
 }
 
-export const production: Record<string, any> = {
+export const production: Knex.Config = {
   client: process.env.DB_CLIENT,
   connection: connection.production,
-  pool: { min: 10, max: 20 },
+  // pool: { min: 10, max: 20 },
   debug: process.env.NODE_ENV == 'development' ? true : false,
   asyncStackTraces: process.env.NODE_ENV == 'development' ? true : false,
   acquireConnectionTimeout: 600000,

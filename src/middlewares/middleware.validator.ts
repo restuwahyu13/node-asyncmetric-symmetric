@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
 import { validationResult, ValidationError, Result } from 'express-validator'
-import http from 'http'
+import { OutgoingMessage } from 'http'
 import { apiResponse } from '@helpers/helper.apiResponse'
 
-export const validator = (req: Request, res: Response, next: NextFunction): http.OutgoingMessage => {
+export const validator = (req: Request, res: Response, next: NextFunction): OutgoingMessage => {
   const errors: Result<ValidationError> = validationResult(req)
 
   const messages: ValidationError[] = []

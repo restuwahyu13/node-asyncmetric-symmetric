@@ -54,12 +54,17 @@ export class Redis {
     return res
   }
 
+  async hkeyCacheDataExist(key: string, field: string): Promise<number> {
+    const res: number = await this.config().hexists(key, field)
+    return res
+  }
+
   async hdelCacheData(key: string, field: string): Promise<number> {
     const res: number = await this.config().hdel(key, field)
     return res
   }
 
-  async hsetCacheData(key: string, field: string, expired: number, data: Record<string, any>[]): Promise<number> {
+  async hsetCacheData(key: string, field: string, expired: number, data: Record<string, any> | Record<string, any>[]): Promise<number> {
     await this.config().expire(key, expired)
     const res: number = await this.config().hset(key, field, JSON.stringify(data))
     return res
