@@ -51,7 +51,7 @@ export class ServiceUsers {
 
   async login(req: Request, body: DTOLogin): Promise<APIResponse> {
     try {
-      const checkUser: IUsers = await this.users.select('id', 'password').where('users.email', body.email).first()
+      const checkUser: IUsers = await this.users.select('id', 'password').where('email', body.email).first()
       if (!checkUser) throw apiResponse({ stat_code: status.NOT_FOUND, err_message: `User email ${body.email} is not registered` })
 
       const checkPassword: boolean = await Argon.verify(body.password, checkUser.password)
@@ -62,7 +62,7 @@ export class ServiceUsers {
 
       const expiredAt: string = moment().utcOffset(0, true).second(this.jwtExpired).format()
       const checkToken: string = await this.redis.getCacheData(`${checkUser.id}-token`)
-      const checkSession: ISessions = await this.sessions.select('secret').where('user_id', checkUser.id).first()
+      const checkSession: ISessions = await this.sessions.select('secret').where({ user_id: checkUser.id, type: 'login' }).first()
 
       if ((token && token == checkToken) || !checkSession) {
         const createSession: ISessions = await this.sessions.insert({ user_id: checkUser.id, type: 'login', secret: checkToken, expired_at: new Date(expiredAt) })
@@ -76,8 +76,8 @@ export class ServiceUsers {
 
       return apiResponse({ stat_code: status.OK, stat_message: 'Login success', data: tokenMetadata })
     } catch (e: any) {
-      console.log(e)
-      return apiResponse(e)
+      if (e instanceof Error) return apiResponse({ stat_code: status.FAILED_DEPENDENCY, err_message: e.message })
+      else return apiResponse(e)
     }
   }
 }
