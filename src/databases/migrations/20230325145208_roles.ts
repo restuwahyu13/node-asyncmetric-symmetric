@@ -1,4 +1,4 @@
-import { Knex } from 'knex'
+import Knex from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('roles', (table: Knex.TableBuilder): void => {
@@ -7,6 +7,7 @@ export async function up(knex: Knex): Promise<void> {
     table.jsonb('permission').notNullable()
     table.timestamp('created_at').defaultTo(knex.fn.now())
     table.timestamp('updated_at').defaultTo(knex.fn.now())
+    table.timestamp('deleted_at').nullable()
   })
 }
 

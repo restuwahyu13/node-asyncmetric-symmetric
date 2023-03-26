@@ -2,3 +2,5 @@ dummy
 node_modules
 dist
 xindex.ts
+.env
+.DS_Store

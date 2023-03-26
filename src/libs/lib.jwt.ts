@@ -16,7 +16,7 @@ export interface ISecretMetadata {
 }
 
 export interface ISignatureMetadata {
-  privKey: crypto.KeyObject
+  privKey: crypto.KeyObject | crypto.PrivateKeyInput
   sigKey: string
   cipherKey: string
 }
@@ -125,7 +125,7 @@ export class JsonWebToken {
       const payload = req.path + '.' + req.method + '.' + signature.sigKey.toLowerCase()
       const symmetricEncrypt: string = Encryption.HMACSHA512Sign(signature.cipherKey, 'hex', payload)
 
-      this.jwtToken = jwt.sign({ key: symmetricEncrypt }, signature.privKey, {
+      this.jwtToken = jwt.sign({ key: symmetricEncrypt }, signature.privKey as crypto.KeyObject, {
         jwtid: signature.sigKey.substring(0, 32),
         audience: faker.name.firstName().toLowerCase(),
         algorithm: 'RS256',

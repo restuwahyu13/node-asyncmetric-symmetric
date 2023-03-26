@@ -30,34 +30,42 @@ export class Encryption {
   }
 
   async RSA256AndHmac512(req: Request, res: Response, key: string): Promise<any> {
-    const getSecretKey: ISecretMetadata = await this.getSecretKey(key)
-    const getSignature: ISignatureMetadata = await this.getSignature(key)
-    const dateNow: string = moment().second(this.signatureExpired).format('YYYY-MM-DD HH:mm:ss')
+    try {
+      const getSecretKey: ISecretMetadata = await this.getSecretKey(key)
+      const getSignature: ISignatureMetadata = await this.getSignature(key)
+      const dateNow: string = moment().second(this.signatureExpired).format('YYYY-MM-DD HH:mm:ss')
 
-    if (['PUT', 'PATCH', 'POST'].includes(req.method)) {
-      this.asymmetricPayload = Buffer.from(JSON.stringify(req.body))
-      this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, getSignature.privKey)
-      this.symmetricPayload +=
-        req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
-    } else {
-      this.asymmetricPayload = Buffer.from(JSON.stringify(req.params || req.query || ''))
-      this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, getSignature.privKey)
-      this.symmetricPayload +=
-        req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
-    }
+      if (['PUT', 'PATCH', 'POST'].includes(req.method)) {
+        this.asymmetricPayload = Buffer.from(JSON.stringify(req.body))
+        this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, getSignature.privKey)
+        this.symmetricPayload +=
+          req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
+      } else {
+        this.asymmetricPayload = Buffer.from(JSON.stringify(req.params || req.query || ''))
+        this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, getSignature.privKey)
+        this.symmetricPayload +=
+          req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.' + dateNow
+      }
 
-    const verifiedAsymmetricSignature = crypto.verify('RSA-SHA256', Buffer.from(this.asymmetricPayload), getSecretKey.pubKey, this.asymmetricSignature)
-    if (!verifiedAsymmetricSignature) return false
+      const rsaPubKey: crypto.KeyLike = crypto.createPublicKey(getSecretKey.pubKey)
+      const rsaPrivKey: crypto.KeyLike = crypto.createPrivateKey(getSecretKey.privKey)
 
-    const symmetricOutput: string = Encryption.HMACSHA512Sign(getSignature.privKey, 'base64', this.symmetricPayload)
-    if (!req.headers['X-Timestamp'] && !req.headers['X-Signature']) {
-      this.redis.setExCacheData(getSignature.cipherKey.substring(0, 5), this.signatureExpired, this.symmetricPayload)
+      if (!rsaPubKey) throw new Error('Invalid credentials')
+      else if (!rsaPrivKey) throw new Error('Invalid credentials')
+
+      const verifiedAsymmetricSignature = crypto.verify('RSA-SHA256', Buffer.from(this.asymmetricPayload), rsaPubKey, this.asymmetricSignature)
+      if (!verifiedAsymmetricSignature) return new Error('Invalid credentials')
+
+      const symmetricOutput: string = Encryption.HMACSHA512Sign(rsaPrivKey, 'base64', this.symmetricPayload)
+      await this.redis.setExCacheData(getSignature.cipherKey.substring(0, 5), this.signatureExpired, this.symmetricPayload)
 
       res.set('X-Signature', symmetricOutput.toString())
       res.set('X-Timestamp', dateNow)
-    }
 
-    return symmetricOutput
+      return symmetricOutput
+    } catch (e: any) {
+      return e.message
+    }
   }
 
   static async AES256Encrypt(secretKey: string, data: string) {

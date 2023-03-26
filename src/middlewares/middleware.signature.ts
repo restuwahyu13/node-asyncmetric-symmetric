@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import crypto from 'crypto'
 import moment from 'moment'
 import validator from 'validator'
 import { Redis } from '@libs/lib.redis'
@@ -32,12 +33,17 @@ export const signature = async (req: Request, res: Response, next: NextFunction)
       redis.getCacheData(signature.cipherKey.substring(0, 5))
     ])
 
-    if (!getHmacSigPayloadKey || !getHmacSigPayload) throw new Error('X-Signature invalid')
-    const isVerified: boolean = Encryption.HMACSHA512Verify(signature.privKey, 'base64', getHmacSigPayload, xSignature)
+    const rsaPrivKey: crypto.KeyLike = crypto.createPrivateKey(signature.privKey as crypto.PrivateKeyInput)
+    if (!rsaPrivKey) throw new Error('X-Signature invalid')
 
-    if (!isVerified) throw new Error('X-Signature not verified')
-    else if (xTimestamp < dateNow) {
-      await Promise.all([redis.delCacheData(signature.cipherKey.substring(0, 5)), delete req.headers['X-Signature'], delete req.headers['X-Timestamp']])
+    if (!getHmacSigPayloadKey || !getHmacSigPayload) throw new Error('X-Signature invalid')
+    const isVerified: boolean = Encryption.HMACSHA512Verify(rsaPrivKey, 'base64', getHmacSigPayload, xSignature)
+
+    if (!isVerified) {
+      await Promise.all([redis.delCacheData(signature.cipherKey.substring(0, 5)), delete req.headers['x-signature'], delete req.headers['x-timestamp']])
+      throw new Error('X-Signature not verified')
+    } else if (xTimestamp < dateNow) {
+      await Promise.all([redis.delCacheData(signature.cipherKey.substring(0, 5)), delete req.headers['x-signature'], delete req.headers['x-timestamp']])
       throw new Error('X-Timestamp expired')
     }
 

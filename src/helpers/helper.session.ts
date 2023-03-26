@@ -3,7 +3,7 @@ import { Redis } from '@/libs/lib.redis'
 
 export const session = async (key: string): Promise<boolean> => {
   const redis: InstanceType<typeof Redis> = new Redis(0)
-  const sessionLimit: number = +process.env.SESSION_LIMIT
+  const sessionLimit: number = +process.env.SESSION_LOGIN_LIMIT
 
   const redisKey: string[] = [`${key}session`, `${key}token`, `${key}secretkey`, `${key}signature`]
   const sessionKey: number = parseInt((await redis.keyCacheDataExist(`${key}session`)) as any)

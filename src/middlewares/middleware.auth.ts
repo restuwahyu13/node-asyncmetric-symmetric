@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import validator from 'validator'
-import { Redis } from '@/libs/lib.redis'
-import { JsonWebToken } from '@/libs/lib.jwt'
+import { Redis } from '@libs/lib.redis'
+import { JsonWebToken } from '@libs/lib.jwt'
 
 export const auth = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {

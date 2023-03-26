@@ -1,7 +1,11 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
 import path from 'path'
+import Knex from 'knex'
+
+config({ path: '../.env' })
 
 const connection: Record<string, any> = {
+  client: process.env.DB_CLIENT,
   production: {
     host: process.env.PG_HOST,
     port: process.env.PG_PORT,
@@ -18,14 +22,18 @@ const connection: Record<string, any> = {
   }
 }
 
-export const development: Record<string, any> = {
-  client: process.env.DB_CLIENT,
+export const development: Knex.Config = {
+  client: connection.client,
   connection: connection.development,
   pool: { min: 1, max: 5 },
   debug: process.env.NODE_ENV == 'development' ? true : false,
   asyncStackTraces: process.env.NODE_ENV == 'development' ? true : false,
-  migrations: path.resolve(process.cwd(), 'migrations'),
-  seeds: path.resolve(process.cwd(), 'seeds'),
+  migrations: {
+    directory: path.resolve(__dirname, 'databases/migrations/')
+  },
+  seeds: {
+    directory: path.resolve(__dirname, 'databases/seeds/')
+  },
   log: {
     warn: (message: any) => console.info(`Database Warn:  ${JSON.stringify(message)}`),
     error: (message: any) => console.error(`Database Error:  ${JSON.stringify(message)}`),
@@ -40,8 +48,12 @@ export const production: Record<string, any> = {
   pool: { min: 10, max: 20 },
   debug: process.env.NODE_ENV == 'development' ? true : false,
   asyncStackTraces: process.env.NODE_ENV == 'development' ? true : false,
-  migrations: path.resolve(process.cwd(), 'migrations'),
-  seeds: path.resolve(process.cwd(), 'seeds'),
+  migrations: {
+    directory: path.resolve(__dirname, 'databases/migrations/')
+  },
+  seeds: {
+    directory: path.resolve(__dirname, 'databases/seeds/')
+  },
   log: {
     warn: (message: any) => console.info(`Database Warn:  ${JSON.stringify(message)}`),
     error: (message: any) => console.error(`Database Error:  ${JSON.stringify(message)}`),

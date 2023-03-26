@@ -5,13 +5,18 @@
     "target": "ESNext",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "typeRoots": ["node_modules/@types/"],
+    "typeRoots": ["node_modules/@types"],
     "paths": {
-      "*": ["node_modules/"],
-      "@/*": ["*"],
+      "@*": ["*"],
+      "@controllers/*": ["controllers/*"],
+      "@dtos/*": ["dtos/*"],
+      "@helpers/*": ["helpers/*"],
+      "@interfaces/*": ["interfaces/*"],
       "@libs/*": ["libs/*"],
       "@middlewares/*": ["middlewares/*"],
-      "@helpers/*": ["helpers/*"]
+      "@models/*": ["models/*"],
+      "@routes/*": ["routes/*"],
+      "@services/*": ["services/*"]
     },
     "strict": true,
     "importHelpers": true,
