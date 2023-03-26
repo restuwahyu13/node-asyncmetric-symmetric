@@ -138,7 +138,7 @@ export class JsonWebToken {
       })
 
       if (sessionExist && !tokenExist) await this.redis.setExCacheData(`${prefix}-token`, this.jwtExpired, this.jwtToken)
-      else if (!sessionExist && !tokenExist) throw new Error('Session expired')
+      else if (!sessionExist && !tokenExist) throw new Error('Conflict other user already sign in, try again')
 
       return this.jwtToken
     } catch (e: any) {
