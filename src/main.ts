@@ -14,6 +14,7 @@ import zlib from 'zlib'
 import * as knexfile from 'knexfile'
 import { RouteRoles } from '@routes/route.roles'
 import { RouteTodos } from '@routes/route.todos'
+import { RouteUsers } from '@routes/route.users'
 
 class App {
   private app: Express
@@ -21,6 +22,7 @@ class App {
   private knex: Knex
   private roles: RouteRoles
   private todos: RouteTodos
+  private users: RouteUsers
 
   constructor() {
     this.app = express()
@@ -28,6 +30,7 @@ class App {
     this.knex = Knex(knexfile[process.env.NODE_ENV])
     this.roles = new RouteRoles()
     this.todos = new RouteTodos()
+    this.users = new RouteUsers()
   }
 
   private connection(): Knex {
@@ -67,8 +70,9 @@ class App {
   }
 
   private route(): void {
-    this.app.use(this.roles.main())
-    this.app.use(this.todos.main())
+    this.app.use('/role', this.roles.main())
+    this.app.use('/todo', this.todos.main())
+    this.app.use('/user', this.users.main())
   }
 
   private run(): void {

@@ -13,11 +13,11 @@ export class RouteRoles {
   }
 
   main(): Router {
-    this.router.post('/roles', [...DTORolesValidation.create(), validator], this.roles.create())
-    this.router.get('/roles', this.roles.findAll())
-    this.router.get('/roles/:id', [...DTORolesValidation.findById(), validator], this.roles.findById())
-    this.router.delete('/roles/:id', [...DTORolesValidation.deleteById(), validator], this.roles.deleteById())
-    this.router.put('/roles/:id', [...DTORolesValidation.updateById(), validator], this.roles.updateById())
+    this.router.post('/', [...DTORolesValidation.create(), validator], this.roles.create())
+    this.router.get('/', this.roles.findAll())
+    this.router.get('/:id', [...DTORolesValidation.findById(), validator], this.roles.findById())
+    this.router.delete('/:id', [...DTORolesValidation.deleteById(), validator], this.roles.deleteById())
+    this.router.put('/:id', [...DTORolesValidation.updateById(), validator], this.roles.updateById())
 
     return this.router
   }

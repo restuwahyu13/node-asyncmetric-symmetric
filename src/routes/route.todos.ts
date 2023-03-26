@@ -13,11 +13,11 @@ export class RouteTodos {
   }
 
   main(): Router {
-    this.router.post('/todos', [...DTOTodosValidation.create(), validator], this.todos.create())
-    this.router.get('/todos', this.todos.findAll())
-    this.router.get('/todos/:id', [...DTOTodosValidation.findById(), validator], this.todos.findById())
-    this.router.delete('/todos/:id', [...DTOTodosValidation.deleteById(), validator], this.todos.deleteById())
-    this.router.put('/todos/:id', [...DTOTodosValidation.updateById(), validator], this.todos.updateById())
+    this.router.post('/', [...DTOTodosValidation.create(), validator], this.todos.create())
+    this.router.get('/', this.todos.findAll())
+    this.router.get('/:id', [...DTOTodosValidation.findById(), validator], this.todos.findById())
+    this.router.delete('/:id', [...DTOTodosValidation.deleteById(), validator], this.todos.deleteById())
+    this.router.put('/:id', [...DTOTodosValidation.updateById(), validator], this.todos.updateById())
 
     return this.router
   }
