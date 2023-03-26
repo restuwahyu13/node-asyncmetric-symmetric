@@ -1,3 +1,4 @@
+import 'express-async-errors'
 import 'dotenv/config'
 import express, { Express } from 'express'
 import http, { Server } from 'http'
@@ -12,18 +13,21 @@ import zlib from 'zlib'
 
 import * as knexfile from 'knexfile'
 import { RouteRoles } from '@routes/route.roles'
+import { RouteTodos } from '@routes/route.todos'
 
 class App {
   private app: Express
   private server: Server
   private knex: Knex
   private roles: RouteRoles
+  private todos: RouteTodos
 
   constructor() {
     this.app = express()
     this.server = http.createServer(this.app)
     this.knex = Knex(knexfile[process.env.NODE_ENV])
     this.roles = new RouteRoles()
+    this.todos = new RouteTodos()
   }
 
   private connection(): Knex {
@@ -64,6 +68,7 @@ class App {
 
   private route(): void {
     this.app.use(this.roles.main())
+    this.app.use(this.todos.main())
   }
 
   private run(): void {

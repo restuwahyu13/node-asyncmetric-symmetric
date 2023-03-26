@@ -11,7 +11,7 @@ export class Todos extends Model implements ITodos {
   deleted_at?: Date
 
   static get tableName(): string {
-    return 'roles'
+    return 'todos'
   }
 
   model(): QueryBuilder<Todos> {

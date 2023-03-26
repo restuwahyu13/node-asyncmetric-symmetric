@@ -28,6 +28,7 @@ export const development: Knex.Config = {
   pool: { min: 1, max: 5 },
   debug: process.env.NODE_ENV == 'development' ? true : false,
   asyncStackTraces: process.env.NODE_ENV == 'development' ? true : false,
+  acquireConnectionTimeout: 600000,
   migrations: {
     directory: path.resolve(__dirname, 'databases/migrations/')
   },
@@ -48,6 +49,7 @@ export const production: Record<string, any> = {
   pool: { min: 10, max: 20 },
   debug: process.env.NODE_ENV == 'development' ? true : false,
   asyncStackTraces: process.env.NODE_ENV == 'development' ? true : false,
+  acquireConnectionTimeout: 600000,
   migrations: {
     directory: path.resolve(__dirname, 'databases/migrations/')
   },

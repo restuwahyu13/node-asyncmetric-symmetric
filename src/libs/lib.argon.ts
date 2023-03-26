@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import argon from 'argon2'
 import crypto from 'crypto'
 

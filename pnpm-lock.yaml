@@ -26,6 +26,7 @@ specifiers:
   cross-env: ^7.0.3
   dotenv: ^16.0.3
   express: ^4.18.2
+  express-async-errors: ^3.1.1
   express-validator: ^6.15.0
   helmet: ^6.0.1
   http-status: ^1.6.2
@@ -55,6 +56,7 @@ dependencies:
   cors: 2.8.5
   dotenv: 16.0.3
   express: 4.18.2
+  express-async-errors: 3.1.1_express@4.18.2
   express-validator: 6.15.0
   helmet: 6.0.1
   http-status: 1.6.2
@@ -888,6 +890,14 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       homedir-polyfill: 1.0.3
+
+  /express-async-errors/3.1.1_express@4.18.2:
+    resolution: {integrity: sha512-h6aK1da4tpqWSbyCa3FxB/V6Ehd4EEB15zyQq9qe75OZBp0krinNKuH4rAY+S/U/2I36vdLAUFSjQJ+TFmODng==}
+    peerDependencies:
+      express: ^4.16.2
+    dependencies:
+      express: 4.18.2
+    dev: false
 
   /express-validator/6.15.0:
     resolution: {integrity: sha512-r05VYoBL3i2pswuehoFSy+uM8NBuVaY7avp5qrYjQBDzagx2Z5A77FZqPT8/gNLF3HopWkIzaTFaC4JysWXLqg==}

@@ -1,5 +1,4 @@
-import 'dotenv/config'
-import { Redis } from '@/libs/lib.redis'
+import { Redis } from '@libs/lib.redis'
 
 export const session = async (key: string): Promise<boolean> => {
   const redis: InstanceType<typeof Redis> = new Redis(0)

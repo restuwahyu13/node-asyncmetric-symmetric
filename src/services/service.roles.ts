@@ -38,10 +38,10 @@ export class ServiceRoles {
 
   async findById(params: DTORolesId): Promise<APIResponse> {
     try {
-      const getById: IRoles = await this.roles.findById(params.id)
-      if (!getById) throw apiResponse({ stat_code: status.NOT_FOUND, stat_message: `Role id ${params.id} not found` })
+      const getRoleById: IRoles = await this.roles.findById(params.id)
+      if (!getRoleById) throw apiResponse({ stat_code: status.NOT_FOUND, stat_message: `Role id ${params.id} not found` })
 
-      return apiResponse({ stat_code: status.OK, stat_message: 'Get role success', data: getById })
+      return apiResponse({ stat_code: status.OK, stat_message: 'Get role success', data: getRoleById })
     } catch (e: any) {
       return apiResponse(e)
     }
@@ -49,13 +49,13 @@ export class ServiceRoles {
 
   async deleteById(params: DTORolesId): Promise<APIResponse> {
     try {
-      const getById: IRoles = await this.roles.findById(params.id)
-      if (!getById) throw apiResponse({ stat_code: status.NOT_FOUND, stat_message: `Role id ${params.id} not found` })
+      const getRoleById: IRoles = await this.roles.findById(params.id)
+      if (!getRoleById) throw apiResponse({ stat_code: status.NOT_FOUND, stat_message: `Role id ${params.id} not found` })
 
       const deleteRole: IRoles = await this.roles.updateAndFetchById(params.id, { delted_at: new Date() }).returning('id')
-      if (!deleteRole) throw apiResponse({ stat_code: status.FORBIDDEN, stat_message: `Deleted Role id ${params.id} failed` })
+      if (!deleteRole) throw apiResponse({ stat_code: status.FORBIDDEN, stat_message: `Deleted role id ${params.id} failed` })
 
-      return apiResponse({ stat_code: status.OK, stat_message: `Deleted role id ${getById.id} success` })
+      return apiResponse({ stat_code: status.OK, stat_message: `Deleted role id ${getRoleById.id} success` })
     } catch (e: any) {
       return apiResponse(e)
     }
@@ -63,13 +63,13 @@ export class ServiceRoles {
 
   async updateById(params: DTORolesId, body: DTORoles): Promise<APIResponse> {
     try {
-      const getById: IRoles = await this.roles.findOne({ id: params.id, name: body.name })
-      if (!getById) throw apiResponse({ stat_code: status.NOT_FOUND, stat_message: `Role id ${params.id} not found` })
+      const getRoleById: IRoles = await this.roles.findOne({ id: params.id, name: body.name })
+      if (!getRoleById) throw apiResponse({ stat_code: status.NOT_FOUND, stat_message: `Role id ${params.id} not found` })
 
       const updateRole: IRoles = await this.roles.updateAndFetchById(params.id, { name: body.name, permission: JSON.stringify(body.permission) }).returning('id')
-      if (!updateRole) throw apiResponse({ stat_code: status.FORBIDDEN, stat_message: `Updated Role id ${params.id} failed` })
+      if (!updateRole) throw apiResponse({ stat_code: status.FORBIDDEN, stat_message: `Updated role id ${params.id} failed` })
 
-      return apiResponse({ stat_code: status.OK, stat_message: `Updated role id ${getById.id} success` })
+      return apiResponse({ stat_code: status.OK, stat_message: `Updated role id ${getRoleById.id} success` })
     } catch (e: any) {
       return apiResponse(e)
     }

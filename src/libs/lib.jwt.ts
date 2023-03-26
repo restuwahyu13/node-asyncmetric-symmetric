@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Request } from 'express'
