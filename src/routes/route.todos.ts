@@ -15,11 +15,11 @@ export class RouteTodos {
   }
 
   main(): Router {
-    this.router.post('/', [...DTOTodosValidation.create(), validator], this.todos.create())
-    this.router.get('/', authorization, signature, this.todos.findAll())
-    this.router.get('/:id', [...DTOTodosValidation.findById(), validator], this.todos.findById())
-    this.router.delete('/:id', [...DTOTodosValidation.deleteById(), validator], this.todos.deleteById())
-    this.router.put('/:id', [...DTOTodosValidation.updateById(), validator], this.todos.updateById())
+    this.router.post('/', [authorization, signature, ...DTOTodosValidation.create(), validator], this.todos.create())
+    this.router.get('/', [authorization, signature], this.todos.findAll())
+    this.router.get('/:id', [authorization, signature, ...DTOTodosValidation.findById(), validator], this.todos.findById())
+    this.router.delete('/:id', [authorization, signature, ...DTOTodosValidation.deleteById(), validator], this.todos.deleteById())
+    this.router.put('/:id', [authorization, signature, ...DTOTodosValidation.updateById(), validator], this.todos.updateById())
 
     return this.router
   }

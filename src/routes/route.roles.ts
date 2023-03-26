@@ -2,6 +2,8 @@ import express, { Router } from 'express'
 import { ControllerRoles } from '@controllers/controller.roles'
 import { validator } from '@middlewares/middleware.validator'
 import { DTORolesValidation } from '@dtos/dto.roles'
+import { authorization } from '@middlewares/middleware.authorization'
+import { signature } from '@middlewares/middleware.signature'
 
 export class RouteRoles {
   roles: InstanceType<typeof ControllerRoles>
@@ -13,11 +15,11 @@ export class RouteRoles {
   }
 
   main(): Router {
-    this.router.post('/', [...DTORolesValidation.create(), validator], this.roles.create())
-    this.router.get('/', this.roles.findAll())
-    this.router.get('/:id', [...DTORolesValidation.findById(), validator], this.roles.findById())
-    this.router.delete('/:id', [...DTORolesValidation.deleteById(), validator], this.roles.deleteById())
-    this.router.put('/:id', [...DTORolesValidation.updateById(), validator], this.roles.updateById())
+    this.router.post('/', [authorization, signature, ...DTORolesValidation.create(), validator], this.roles.create())
+    this.router.get('/', [authorization, signature], this.roles.findAll())
+    this.router.get('/:id', [authorization, signature, ...DTORolesValidation.findById(), validator], this.roles.findById())
+    this.router.delete('/:id', [authorization, signature, ...DTORolesValidation.deleteById(), validator], this.roles.deleteById())
+    this.router.put('/:id', [authorization, signature, ...DTORolesValidation.updateById(), validator], this.roles.updateById())
 
     return this.router
   }
