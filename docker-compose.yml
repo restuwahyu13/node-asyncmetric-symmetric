@@ -3,24 +3,25 @@ services:
   ###########################
   # APPLICATION SERVICES
   ###########################
-  # app:
-  #   build: .
-  #   restart: always
-  #   healthcheck:
-  #     start_period: 60ms
-  #     timeout: 120s
-  #     interval: 30s
-  #     test: env | grep home
-  #   ports:
-  #     - 3000:3000
-  #   env_file: .env
-  #   depends_on:
-  #     - database
-  #   volumes:
-  #     - ./:/usr/share/app
-  #     - /usr/share/app/node_modules
-  #   networks:
-  #     - node_networks
+  app:
+    build: .
+    restart: always
+    healthcheck:
+      start_period: 60ms
+      timeout: 120s
+      interval: 30s
+      test: env | grep home
+    ports:
+      - 3000:3000
+    env_file: .env
+    depends_on:
+      - database
+      - caching
+    volumes:
+      - ./:/usr/share/app
+      - /usr/share/app/node_modules
+    networks:
+      - node_networks
   ###########################
   # DATABASE SERVICES
   ###########################
@@ -44,10 +45,29 @@ services:
     networks:
       - node_networks
   ###########################
+  # DATABASE SERVICES
+  ###########################
+  caching:
+    image: redis:7.0.8-alpine
+    restart: always
+    healthcheck:
+      start_period: 60ms
+      timeout: 120s
+      interval: 30s
+      test: env | grep home
+    ports:
+      - 6379:6379
+    env_file: .env
+    volumes:
+      - database:/var/lib/redis/data
+    networks:
+      - node_networks
+  ###########################
   # VOLUME PERSISTENT DATA
   ###########################
 volumes:
   database:
+  caching:
   ###########################
   # NETWORK SHARING GROUP
   ###########################
