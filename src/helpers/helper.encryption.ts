@@ -6,6 +6,12 @@ import jose from 'jose'
 import { Redis } from '@libs/lib.redis'
 import { ISecretMetadata, ISignatureMetadata } from '@libs/lib.jwt'
 
+interface SignatureAuth {
+  method: string
+  path: string
+  payload?: any
+}
+
 export class Encryption {
   private redis: InstanceType<typeof Redis>
   private asymmetricPayload: Buffer = Buffer.from('')
@@ -30,9 +36,14 @@ export class Encryption {
 
   async RSA256AndHmac512(req: Request, prefix: string): Promise<any> {
     try {
-      const secretkey: ISecretMetadata = await this.getSecretKey(prefix)
-      const signature: ISignatureMetadata = await this.getSignature(prefix)
       const dateNow: string = moment().utcOffset(0, true).second(this.signatureExpired).format()
+      const body: SignatureAuth = { method: req.method, path: req.path, payload: {} }
+
+      const secretkey: ISecretMetadata = await this.getSecretKey(prefix)
+      if (!secretkey) return new Error('Invalid credentials')
+
+      const signature: ISignatureMetadata = await this.getSignature(prefix)
+      if (!signature) return new Error('Invalid credentials')
 
       const rsaPubKey: crypto.KeyLike = crypto.createPublicKey(secretkey.pubKey)
       const rsaPrivKey: crypto.KeyObject = crypto.createPrivateKey({
@@ -45,14 +56,14 @@ export class Encryption {
       if (!rsaPubKey) throw new Error('Invalid signature')
       else if (!rsaPrivKey) throw new Error('Invalid signature')
 
-      if (['PUT', 'PATCH', 'POST'].includes(req.method)) {
-        this.asymmetricPayload = Buffer.from(JSON.stringify(req.body))
+      if (['PUT', 'PATCH', 'POST'].includes(body.method)) {
+        this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload))
         this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, rsaPrivKey)
-        this.symmetricPayload += req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
+        this.symmetricPayload += body.path + '.' + body.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
       } else {
-        this.asymmetricPayload = Buffer.from(JSON.stringify(req.params || req.query || ''))
+        this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload))
         this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, rsaPrivKey)
-        this.symmetricPayload += req.path + '.' + req.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
+        this.symmetricPayload += body.path + '.' + body.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
       }
 
       const verifiedAsymmetricSignature = crypto.verify('RSA-SHA256', Buffer.from(this.asymmetricPayload), rsaPubKey, this.asymmetricSignature)
@@ -64,27 +75,30 @@ export class Encryption {
         this.redis.hgetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 5))
       ])
 
+      let signatureKey: string = ''
+      let dateTime: string = ''
+
       if (!signatureKeyExist1 && !signatureKeyExist2) {
-        const symmetricOutput = Encryption.HMACSHA512Sign(Buffer.from(signature.cipherKey), 'base64', this.symmetricPayload)
+        const symmetricOutput: string = Encryption.HMACSHA512Sign(Buffer.from(signature.cipherKey), 'base64', this.symmetricPayload)
         await this.redis.hsetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 5), this.signatureExpired, { payload: this.symmetricPayload })
-        await this.redis.hsetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 10), this.signatureExpired, { time: dateNow, signature: symmetricOutput.toString() })
+        await this.redis.hsetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 10), this.signatureExpired, { time: dateNow, signature: symmetricOutput })
 
-        req.headers['X-Signature'] = symmetricOutput.toString()
-        req.headers['X-Timestamp'] = dateNow
-      } else if (signatureKeyExist1 && Buffer.compare(Buffer.from(this.symmetricPayload), Buffer.from(signatureKeyPayload.payload)) == -1) {
-        const symmetricOutput = Encryption.HMACSHA512Sign(Buffer.from(signature.cipherKey), 'base64', this.symmetricPayload)
+        signatureKey = symmetricOutput
+        dateTime = dateNow
+      } else if (signatureKeyExist1 && this.symmetricPayload !== signatureKeyPayload.payload) {
+        const symmetricOutput: string = Encryption.HMACSHA512Sign(Buffer.from(signature.cipherKey), 'base64', this.symmetricPayload)
         await this.redis.hsetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 5), this.signatureExpired, { payload: this.symmetricPayload })
-        await this.redis.hsetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 10), this.signatureExpired, { time: dateNow, signature: symmetricOutput.toString() })
+        await this.redis.hsetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 10), this.signatureExpired, { time: dateNow, signature: symmetricOutput })
 
-        req.headers['X-Signature'] = symmetricOutput.toString()
-        req.headers['X-Timestamp'] = dateNow
-      } else {
-        const symmetricOutputCache: Record<string, any> = await this.redis.hgetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 10))
-        req.headers['X-Signature'] = symmetricOutputCache.signature
-        req.headers['X-Timestamp'] = symmetricOutputCache.time
+        signatureKey = symmetricOutput
+        dateTime = dateNow
+      } else if (signatureKeyExist1 && signatureKeyExist2) {
+        const symmetricOutput: Record<string, any> = await this.redis.hgetCacheData(`${prefix}-signatures`, signature.cipherKey.substring(0, 10))
+        signatureKey = symmetricOutput.signature
+        dateTime = symmetricOutput.time
       }
 
-      return true
+      return { signature: signatureKey, timestamp: dateNow }
     } catch (e: any) {
       return e.message
     }

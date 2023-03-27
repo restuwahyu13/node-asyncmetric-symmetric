@@ -59,8 +59,8 @@ export class Redis {
     return res
   }
 
-  async hdelCacheData(key: string, field: string): Promise<number> {
-    const res: number = await this.config().hdel(key, field)
+  async hdelCacheData(key: string): Promise<number> {
+    const res: number = await this.config().del(key)
     return res
   }
 

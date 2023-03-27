@@ -12,7 +12,7 @@
     "cleanup": "rimraf dist",
     "start": "node dist/main.js",
     "build": "npm run cleanup && npm run ts-bin:prod",
-    "dev": "DEBUG=* npm run ts-bin:dev",
+    "dev": "npm run ts-bin:dev",
     "kmig": "npx knex --cwd src --knexfile knexfile.ts migrate:latest",
     "kroll": "npx knex --cwd src --knexfile knexfile.ts migrate:rollback",
     "klist": "npx knex --cwd src --knexfile knexfile.ts migrate:list",

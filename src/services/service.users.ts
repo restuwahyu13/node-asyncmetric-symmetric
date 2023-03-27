@@ -60,15 +60,6 @@ export class ServiceUsers {
       const token: any = await new JsonWebToken().sign(req, checkUser.id, { id: checkUser.id })
       if (!validator.isJWT(token)) throw apiResponse({ stat_code: status.FORBIDDEN, err_message: token })
 
-      const expiredAt: string = moment().utcOffset(0, true).second(this.jwtExpired).format()
-      const checkToken: string = await this.redis.getCacheData(`${checkUser.id}-token`)
-      const checkSession: ISessions = await this.sessions.select('secret').where({ user_id: checkUser.id, type: 'login' }).first()
-
-      if ((token && token == checkToken) || !checkSession) {
-        const createSession: ISessions = await this.sessions.insert({ user_id: checkUser.id, type: 'login', secret: checkToken, expired_at: new Date(expiredAt) })
-        if (!createSession) throw apiResponse({ stat_code: status.BAD_REQUEST, err_message: 'Create session failed' })
-      }
-
       const tokenMetadata: Record<string, any> = {
         accessToken: token,
         expired: `${+this.jwtExpired / 60} minutes`

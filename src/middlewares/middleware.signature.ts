@@ -11,18 +11,14 @@ import { apiResponse } from '@helpers/helper.apiResponse'
 export const signature = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const redis: InstanceType<typeof Redis> = new Redis(0)
-    const encryption: InstanceType<typeof Encryption> = new Encryption()
     const userId: string = req['user']
 
-    const RSA256AndHmac512: any = await encryption.RSA256AndHmac512(req, userId)
-    if (typeof RSA256AndHmac512 != 'boolean' && !validator.isBoolean(RSA256AndHmac512)) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: RSA256AndHmac512 })
-
     const headers: Record<string, any> = req.headers
-    if (!headers.hasOwnProperty('X-Signature')) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature is required on headers' })
-    else if (!headers.hasOwnProperty('X-Timestamp')) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Timestamp is required on headers' })
+    if (!headers.hasOwnProperty('x-signature')) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature is required on headers' })
+    else if (!headers.hasOwnProperty('x-timestamp')) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Timestamp is required on headers' })
 
-    const xSignature: string = req.headers['X-Signature'] as any
-    const xTimestamp: string = req.headers['X-Timestamp'] as any
+    const xSignature: string = req.headers['x-signature'] as any
+    const xTimestamp: string = req.headers['x-timestamp'] as any
     const dateNow: string = moment().utcOffset(0, true).format()
 
     if (validator.isEmpty(xSignature)) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature not to be empty' })
@@ -31,7 +27,7 @@ export const signature = async (req: Request, res: Response, next: NextFunction)
     else if (!moment(xTimestamp).isValid()) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Timestamp must be date format' })
 
     const signature: ISignatureMetadata = await redis.hgetCacheData(`${userId}-credentials`, 'signature')
-    if (!signature) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalidx' })
+    if (!signature) throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid' })
 
     const [getHmacSigPayloadKey, getHmacSigPayload, getHmacSigKey, getHmacSig]: [number, Record<string, any>, number, Record<string, any>] = await Promise.all([
       redis.hkeyCacheDataExist(`${userId}-signatures`, signature.cipherKey.substring(0, 5)),
@@ -41,23 +37,18 @@ export const signature = async (req: Request, res: Response, next: NextFunction)
     ])
 
     if (!getHmacSigPayloadKey || !getHmacSigPayload || !getHmacSigKey || !getHmacSig) {
-      delete req.headers['X-Signature']
-      delete req.headers['X-Timestamp']
+      delete req.headers['x-signature']
+      delete req.headers['x-timestamp']
       throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid' })
     } else if (getHmacSig.time < dateNow || xSignature != getHmacSig.signature) {
-      delete req.headers['X-Signature']
-      delete req.headers['X-Timestamp']
-      throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid' })
+      delete req.headers['x-signature']
+      delete req.headers['x-timestamp']
+      throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid | X-Timestamp expired' })
     }
 
     const isVerified: boolean = Encryption.HMACSHA512Verify(signature.cipherKey, 'base64', getHmacSigPayload.payload, xSignature)
     if (!isVerified) {
-      await Promise.all([
-        redis.hdelCacheData(`${userId}-signatures`, signature.cipherKey.substring(0, 5)),
-        redis.hdelCacheData(`${userId}-signatures`, signature.cipherKey.substring(0, 10)),
-        delete req.headers['X-Signature'],
-        delete req.headers['X-Timestamp']
-      ])
+      await Promise.all([redis.hdelCacheData(`${userId}-signatures`), delete req.headers['x-signature'], delete req.headers['x-timestamp']])
       throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature not verified' })
     }
 
