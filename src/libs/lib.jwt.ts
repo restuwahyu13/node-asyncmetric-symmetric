@@ -108,8 +108,8 @@ export class JsonWebToken {
       const verifiedSignature = crypto.verify('RSA-SHA256', Buffer.from(bodyPayload), secretKey.pubKey, signature)
       if (!verifiedSignature) throw new Error('Credential not verified')
 
-      const formatPrivkeyToJwsL: jose.JWK = await Jose.exportJsonWebKey(rsaPrivKey)
-      if (!formatPrivkeyToJwsL) throw new Error('Credential not verified')
+      const formatPrivkeyToJws: jose.JWK = await Jose.exportJsonWebKey(rsaPrivKey)
+      if (!formatPrivkeyToJws) throw new Error('Credential not verified')
 
       const jweKey: jose.FlattenedJWE = await Jose.JweEncrypt(rsaPrivKey, signatureOutput)
       if (!jweKey) throw new Error('Credential not verified')
@@ -118,7 +118,7 @@ export class JsonWebToken {
         privKey: secretKey.privKey,
         sigKey: signatureOutput,
         cipherKey: secretKey.cipherKey,
-        jwkKey: formatPrivkeyToJwsL,
+        jwkKey: formatPrivkeyToJws,
         jweKey: jweKey
       }
 
@@ -176,20 +176,23 @@ export class JsonWebToken {
 
   async verify(prefix: string, token: string): Promise<any> {
     try {
-      const secretkey: ISecretMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'secretkey')
-      const signature: ISignatureMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'signature')
+      // const secretkey: ISecretMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'secretkey')
+      // const signature: ISignatureMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'signature')
 
-      const rsaPubKey: crypto.KeyObject = crypto.createPublicKey(secretkey.pubKey)
-      if (!rsaPubKey) throw new Error('Unauthorized JWT token signature is not verified')
+      // const rsaPubKey: crypto.KeyObject = crypto.createPublicKey(secretkey.pubKey)
+      // if (!rsaPubKey) throw new Error('Unauthorized JWT token signature is not verified')
 
-      const verifyTokenSignature: jose.CompactVerifyResult = await jose.compactVerify(token, rsaPubKey)
-      if (!verifyTokenSignature) throw new Error('Unauthorized JWT token signature is not verified')
+      // const verifyTokenSignature: jose.CompactVerifyResult = await jose.compactVerify(token, rsaPubKey)
+      // if (!verifyTokenSignature) throw new Error('Unauthorized JWT token signature is not verified')
 
-      const verifyTokenSignatureParse: jwt.JwtPayload = JSON.parse(verifyTokenSignature.payload.toString())
-      const verifyToken: string = jwt.verify(token!, rsaPubKey) as any
+      // const verifyTokenSignatureParse: jwt.JwtPayload = JSON.parse(verifyTokenSignature.payload.toString())
+      // const verifyToken: string = jwt.verify(token!, rsaPubKey) as any
 
-      if (!verifyToken) throw new Error('Unauthorized JWT token signature is not verified')
-      else if (verifyToken && !Array.isArray(signature.sigKey.match(verifyTokenSignatureParse.jti))) throw new Error('Unauthorized JWT token signature is not verified')
+      // if (!verifyToken) throw new Error('Unauthorized JWT token signature is not verified')
+      // else if (verifyToken && !Array.isArray(signature.sigKey.match(verifyTokenSignatureParse.jti))) throw new Error('Unauthorized JWT token signature is not verified')
+
+      const verifyToken: any = await new Jose().JwtVerify(prefix, token)
+      if (!verifyToken) throw verifyToken
 
       return token
     } catch (e: any) {

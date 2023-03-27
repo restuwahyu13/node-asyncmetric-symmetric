@@ -45,7 +45,7 @@ export class Jose {
     return jwt
   }
 
-  async JwtVerify(token: string, prefix: string): Promise<string> {
+  async JwtVerify(prefix: string, token: string): Promise<string> {
     const secretkey: ISecretMetadata = await this.redis.hgetCacheData(`${prefix}-credentials`, 'secretkey')
     if (!secretkey) throw new Error('Unauthorized JWT token signature is not verified')
 
