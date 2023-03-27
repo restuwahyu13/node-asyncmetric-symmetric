@@ -33,13 +33,13 @@ export class Jose {
     return jwk
   }
 
-  static async JwtSign(privateKey: jose.KeyLike | crypto.KeyObject, kid: string, data: jose.JWTPayload): Promise<string> {
-    const jwt: string = await new jose.SignJWT({ name: 'john doe' })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT', cty: 'JWT', kid: kid, b64: true })
-      .setAudience(data.aud)
-      .setIssuer(data.iss)
-      .setExpirationTime(data.exp)
-      .setJti(data.jti)
+  static async JwtSign(privateKey: jose.KeyLike | crypto.KeyObject, headerKeyId: string, data: Record<string, any>, options: jose.JWTPayload): Promise<string> {
+    const jwt: string = await new jose.SignJWT(data)
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT', cty: 'JWT', kid: headerKeyId, b64: true })
+      .setAudience(options.aud)
+      .setIssuer(options.iss)
+      .setExpirationTime(options.exp)
+      .setJti(options.jti)
       .sign(privateKey)
 
     return jwt

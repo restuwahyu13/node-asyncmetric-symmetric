@@ -153,12 +153,17 @@ export class JsonWebToken {
       //   expiresIn: this.jwtExpired
       // })
 
-      this.jwtToken = await Jose.JwtSign(rsaPrivKey, signature.jweKey.ciphertext, {
-        jti: signature.sigKey.substring(0, 10),
-        aud: signature.sigKey.substring(10, 20),
-        iss: signature.sigKey.substring(20, 30),
-        exp: this.jwtExpired
-      })
+      this.jwtToken = await Jose.JwtSign(
+        rsaPrivKey,
+        signature.jweKey.ciphertext,
+        { key: symmetricEncrypt },
+        {
+          jti: signature.sigKey.substring(0, 10),
+          aud: signature.sigKey.substring(10, 20),
+          iss: signature.sigKey.substring(20, 30),
+          exp: this.jwtExpired
+        }
+      )
 
       if (sessionExist && !tokenExist) await this.redis.setExCacheData(`${prefix}-token`, this.jwtExpired, this.jwtToken)
       else if (!sessionExist && !tokenExist) throw new Error('Conflict other user already sign in, try again')
