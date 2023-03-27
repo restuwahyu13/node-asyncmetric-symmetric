@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import crypto from 'crypto'
 import moment from 'moment'
+import jose from 'jose'
+
 import { Redis } from '@libs/lib.redis'
 import { ISecretMetadata, ISignatureMetadata } from '@libs/lib.jwt'
 

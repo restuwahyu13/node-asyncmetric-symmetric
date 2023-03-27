@@ -7,6 +7,7 @@ import { faker } from '@faker-js/faker'
 import { Redis } from '@libs/lib.redis'
 import { session } from '@helpers/helper.session'
 import { Encryption } from '@helpers/helper.encryption'
+import { Jose } from '@libs/lib.jose'
 
 export interface ISecretMetadata {
   pubKey: string
@@ -18,6 +19,8 @@ export interface ISignatureMetadata {
   privKey: string
   sigKey: string
   cipherKey: string
+  jwkKey: jose.JWK
+  jweKey: jose.FlattenedJWE
 }
 
 export class JsonWebToken {
@@ -35,7 +38,9 @@ export class JsonWebToken {
   private sigMetadata: ISignatureMetadata = {
     privKey: {} as any,
     sigKey: '',
-    cipherKey: ''
+    cipherKey: '',
+    jwkKey: {},
+    jweKey: {} as any
   }
 
   constructor() {
@@ -97,15 +102,26 @@ export class JsonWebToken {
       const bodyPayload: string = JSON.stringify(body)
       const signature: Buffer = crypto.sign('RSA-SHA256', Buffer.from(bodyPayload), rsaPrivKey)
 
+      if (!signature) throw new Error('Credential not verified')
+      const signatureOutput: string = signature.toString('hex')
+
       const verifiedSignature = crypto.verify('RSA-SHA256', Buffer.from(bodyPayload), secretKey.pubKey, signature)
       if (!verifiedSignature) throw new Error('Credential not verified')
 
-      const signatureOutput: string = signature.toString('hex')
+      const formatPrivkeyToJwsL: jose.JWK = await Jose.exportJsonWebKey(rsaPrivKey)
+      if (!formatPrivkeyToJwsL) throw new Error('Credential not verified')
+
+      const jweKey: jose.FlattenedJWE = await Jose.JweEncrypt(rsaPrivKey, signatureOutput)
+      if (!jweKey) throw new Error('Credential not verified')
+
       this.sigMetadata = {
         privKey: secretKey.privKey,
         sigKey: signatureOutput,
-        cipherKey: secretKey.cipherKey
+        cipherKey: secretKey.cipherKey,
+        jwkKey: formatPrivkeyToJwsL,
+        jweKey: jweKey
       }
+
       await this.redis.hsetCacheData(`${prefix}-credentials`, 'signature', this.jwtExpired, this.sigMetadata as any)
     } else {
       this.sigMetadata = (await this.redis.hgetCacheData(`${prefix}-credentials`, 'signature')) as any
@@ -130,11 +146,18 @@ export class JsonWebToken {
         passphrase: signature.cipherKey
       })
 
-      this.jwtToken = jwt.sign({ key: symmetricEncrypt }, rsaPrivKey, {
-        jwtid: signature.sigKey.substring(0, 32),
-        audience: faker.name.firstName().toLowerCase(),
-        algorithm: 'RS256',
-        expiresIn: this.jwtExpired
+      // this.jwtToken = jwt.sign({ key: symmetricEncrypt }, rsaPrivKey, {
+      //   jwtid: signature.sigKey.substring(0, 32),
+      //   audience: faker.name.firstName().toLowerCase(),
+      //   algorithm: 'RS256',
+      //   expiresIn: this.jwtExpired
+      // })
+
+      this.jwtToken = await Jose.JwtSign(rsaPrivKey, signature.jweKey.ciphertext, {
+        jti: signature.sigKey.substring(0, 10),
+        aud: signature.sigKey.substring(10, 20),
+        iss: signature.sigKey.substring(20, 30),
+        exp: this.jwtExpired
       })
 
       if (sessionExist && !tokenExist) await this.redis.setExCacheData(`${prefix}-token`, this.jwtExpired, this.jwtToken)
