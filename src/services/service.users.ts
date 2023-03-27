@@ -67,7 +67,8 @@ export class ServiceUsers {
 
       return apiResponse({ stat_code: status.OK, stat_message: 'Login success', data: tokenMetadata })
     } catch (e: any) {
-      if (e instanceof Error) return apiResponse({ stat_code: status.FAILED_DEPENDENCY, err_message: e.message })
+      console.error(e.message)
+      if (e instanceof Error) return apiResponse({ stat_code: status.INTERNAL_SERVER_ERROR, err_message: e.message })
       else return apiResponse(e)
     }
   }
