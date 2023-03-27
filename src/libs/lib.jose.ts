@@ -65,11 +65,11 @@ export class Jose {
     if (!jweVerify) throw new Error('Unauthorized JWT token signature is not verified')
 
     if (jwsVerify.protectedHeader.kid != jweVerify) throw new Error('Unauthorized JWT token signature is not verified')
-    const verifyTokenSignatureParse: jwt.JwtPayload = JSON.parse(jwsVerify.payload.toString())
+    const jwsVerifyParse: jwt.JwtPayload = JSON.parse(jwsVerify.payload.toString())
 
     const jwtVerify = await jose.jwtVerify(token, jwkVerify, { audience: signature.sigKey.substring(10, 20), issuer: signature.sigKey.substring(20, 30) })
     if (!jwtVerify) throw new Error('Unauthorized JWT token signature is not verified')
-    else if (jwtVerify && !Array.isArray(signature.sigKey.match(verifyTokenSignatureParse.jti))) throw new Error('Unauthorized JWT token signature is not verified')
+    else if (jwtVerify && !Array.isArray(signature.sigKey.match(jwsVerifyParse.jti))) throw new Error('Unauthorized JWT token signature is not verified')
 
     return token
   }
