@@ -37,12 +37,10 @@ export const signature = async (req: Request, res: Response, next: NextFunction)
     ])
 
     if (!getHmacSigPayloadKey || !getHmacSigPayload || !getHmacSigKey || !getHmacSig) {
-      delete req.headers['x-signature']
-      delete req.headers['x-timestamp']
       throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid' })
+    } else if (xTimestamp < dateNow || xSignature != getHmacSig.signature) {
+      throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid | X-Timestamp expired' })
     } else if (getHmacSig.time < dateNow || xSignature != getHmacSig.signature) {
-      delete req.headers['x-signature']
-      delete req.headers['x-timestamp']
       throw apiResponse({ stat_code: status.UNAUTHORIZED, err_message: 'X-Signature invalid | X-Timestamp expired' })
     }
 
