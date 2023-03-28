@@ -59,11 +59,29 @@ export class Encryption {
       if (['PUT', 'PATCH', 'POST'].includes(body.method)) {
         this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload || {}))
         this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, rsaPrivKey)
-        this.symmetricPayload += body.path + '.' + body.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
+        this.symmetricPayload +=
+          body.path +
+          '.' +
+          body.method +
+          '.' +
+          req.headers.authorization?.split('Bearer ')[1] +
+          '.' +
+          this.asymmetricSignature.toString('base64') +
+          '.' +
+          Encryption.HMACSHA512Sign(Buffer.from(secretkey.cipherKey), 'base64', JSON.stringify(req.headers))
       } else {
         this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload || {}))
         this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, rsaPrivKey)
-        this.symmetricPayload += body.path + '.' + body.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
+        this.symmetricPayload +=
+          body.path +
+          '.' +
+          body.method +
+          '.' +
+          req.headers.authorization?.split('Bearer ')[1] +
+          '.' +
+          this.asymmetricSignature.toString('base64') +
+          '.' +
+          Encryption.HMACSHA512Sign(Buffer.from(secretkey.cipherKey), 'base64', JSON.stringify(req.headers))
       }
 
       const verifiedAsymmetricSignature = crypto.verify('RSA-SHA256', Buffer.from(this.asymmetricPayload), rsaPubKey, this.asymmetricSignature)
