@@ -3,7 +3,7 @@ import { Sessions } from '@models/model.sessions'
 
 export const session = async (prefix: string): Promise<any> => {
   try {
-    const redis: InstanceType<typeof Redis> = new Redis(0)
+    const redis: InstanceType<typeof Redis> = new Redis()
     const sessions: InstanceType<typeof Sessions> = new Sessions()
     const sessionLimit: number = +process.env.SESSION_LOGIN_LIMIT
     const sessionExpired: number = +process.env.SESSION_EXPIRED

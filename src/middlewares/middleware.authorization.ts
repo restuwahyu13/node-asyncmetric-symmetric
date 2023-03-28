@@ -11,7 +11,7 @@ import { apiResponse } from '@helpers/helper.apiResponse'
 
 export const authorization = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const redis: InstanceType<typeof Redis> = new Redis(0)
+    const redis: InstanceType<typeof Redis> = new Redis()
     const jwt: InstanceType<typeof JsonWebToken> = new JsonWebToken()
     const sessions: InstanceType<typeof Sessions> = new Sessions()
 

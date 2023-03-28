@@ -10,7 +10,7 @@ import { apiResponse } from '@helpers/helper.apiResponse'
 
 export const signature = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const redis: InstanceType<typeof Redis> = new Redis(0)
+    const redis: InstanceType<typeof Redis> = new Redis()
     const userId: string = req['user']
 
     const headers: Record<string, any> = req.headers

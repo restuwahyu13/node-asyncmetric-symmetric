@@ -20,7 +20,7 @@ export class Encryption {
   private signatureExpired: number = 500
 
   constructor() {
-    this.redis = new Redis(0)
+    this.redis = new Redis()
     this.signatureExpired = +process.env.SIGNATURE_EXPIRED!
   }
 

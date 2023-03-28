@@ -27,7 +27,7 @@ export class ServiceUsers {
     this.users = new Users().model()
     this.roles = new Roles().model()
     this.sessions = new Sessions().model()
-    this.redis = new Redis(0)
+    this.redis = new Redis()
     this.jwtExpired = +process.env.JWT_EXPIRED
   }
 

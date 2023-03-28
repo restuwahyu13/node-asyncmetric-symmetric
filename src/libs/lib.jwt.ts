@@ -47,7 +47,7 @@ export class JsonWebToken {
   }
 
   constructor() {
-    this.redis = new Redis(0)
+    this.redis = new Redis()
     this.sessions = new Sessions().model()
     this.jwtSecretKey = process.env.JWT_SECRET_KEY!
     this.jwtExpired = +process.env.JWT_EXPIRED!
@@ -150,7 +150,7 @@ export class JsonWebToken {
 
       const signature: ISignatureMetadata = await this.createSignature(prefix, Object.assign(body, req.body))
       const expiredAt: string = moment().utcOffset(0, true).second(this.jwtExpired).format()
-      const payload = req.path + '.' + req.method + '.' + signature.sigKey.toLowerCase() + '.' + expiredAt
+      const payload: string = req.path + '.' + req.method + '.' + signature.sigKey.toLowerCase() + '.' + expiredAt
 
       const symmetricEncrypt: string = Encryption.HMACSHA512Sign(signature.cipherKey, 'hex', payload)
       const rsaPrivKey: crypto.KeyObject = crypto.createPrivateKey({

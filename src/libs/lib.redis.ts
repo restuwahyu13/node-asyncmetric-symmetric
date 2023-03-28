@@ -1,10 +1,10 @@
 import IORedis from 'ioredis'
 
 export class Redis {
-  private db: number
+  private db: number = 0
 
-  constructor(db: number) {
-    this.db = db
+  constructor() {
+    this.db = parseInt(process.env.REDIS_DB)
   }
 
   config(): IORedis {

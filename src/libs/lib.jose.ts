@@ -8,7 +8,7 @@ export class Jose {
   private redis: InstanceType<typeof Redis>
 
   constructor() {
-    this.redis = new Redis(0)
+    this.redis = new Redis()
   }
 
   static async JweEncrypt(privateKey: jose.KeyLike | crypto.KeyObject, data: string): Promise<jose.FlattenedJWE> {
