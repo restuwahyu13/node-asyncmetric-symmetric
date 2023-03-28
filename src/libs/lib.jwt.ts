@@ -149,8 +149,8 @@ export class JsonWebToken {
       const checkSession: ISessions = await this.sessions.select('secret').where({ user_id: prefix, type: 'login' }).first()
 
       const signature: ISignatureMetadata = await this.createSignature(prefix, Object.assign(body, req.body))
-      const payload = req.path + '.' + req.method + '.' + signature.sigKey.toLowerCase()
       const expiredAt: string = moment().utcOffset(0, true).second(this.jwtExpired).format()
+      const payload = req.path + '.' + req.method + '.' + signature.sigKey.toLowerCase() + '.' + expiredAt
 
       const symmetricEncrypt: string = Encryption.HMACSHA512Sign(signature.cipherKey, 'hex', payload)
       const rsaPrivKey: crypto.KeyObject = crypto.createPrivateKey({
@@ -189,7 +189,7 @@ export class JsonWebToken {
   async verify(prefix: string, token: string): Promise<any> {
     try {
       const verifyToken: any = await new Jose().JwtVerify(prefix, token)
-      if (!verifyToken) throw verifyToken
+      if (!verifyToken) throw new Error(verifyToken)
 
       return token
     } catch (e: any) {

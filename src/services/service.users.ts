@@ -54,7 +54,7 @@ export class ServiceUsers {
       const checkUser: IUsers = await this.users.select('id', 'password').where('email', body.email).first()
       if (!checkUser) throw apiResponse({ stat_code: status.NOT_FOUND, err_message: `User email ${body.email} is not registered` })
 
-      const checkPassword: boolean = await Argon.verify(body.password, checkUser.password)
+      const checkPassword: boolean | string = await Argon.verify(body.password, checkUser.password)
       if (!checkPassword) throw apiResponse({ stat_code: status.BAD_REQUEST, err_message: `User password ${body.password} miss match` })
 
       const token: any = await new JsonWebToken().sign(req, checkUser.id, { id: checkUser.id })

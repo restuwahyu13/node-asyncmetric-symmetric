@@ -37,7 +37,7 @@ export class Encryption {
   async RSA256AndHmac512(req: Request, prefix: string): Promise<any> {
     try {
       const dateNow: string = moment().utcOffset(0, true).second(this.signatureExpired).format()
-      const body: SignatureAuth = { method: req.method, path: req.path, payload: {} }
+      const body: SignatureAuth = req.body
 
       const secretkey: ISecretMetadata = await this.getSecretKey(prefix)
       if (!secretkey) return new Error('Invalid credentials')
@@ -57,11 +57,11 @@ export class Encryption {
       else if (!rsaPrivKey) throw new Error('Invalid signature')
 
       if (['PUT', 'PATCH', 'POST'].includes(body.method)) {
-        this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload))
+        this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload || {}))
         this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, rsaPrivKey)
         this.symmetricPayload += body.path + '.' + body.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
       } else {
-        this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload))
+        this.asymmetricPayload = Buffer.from(JSON.stringify(body.payload || {}))
         this.asymmetricSignature = crypto.sign('RSA-SHA256', this.asymmetricPayload, rsaPrivKey)
         this.symmetricPayload += body.path + '.' + body.method + '.' + req.headers.authorization?.split('Bearer ')[1] + '.' + this.asymmetricSignature.toString('base64') + '.'
       }
@@ -98,13 +98,13 @@ export class Encryption {
         dateTime = symmetricOutput.time
       }
 
-      return { signature: signatureKey, timestamp: dateNow }
+      return { signature: signatureKey, timestamp: dateTime }
     } catch (e: any) {
       return e.message
     }
   }
 
-  static async AES256Encrypt(secretKey: string, data: string) {
+  static AES256Encrypt(secretKey: string, data: string): Buffer {
     const checkValidSecretKey: crypto.KeyObject = crypto.createSecretKey(Buffer.from(secretKey))
 
     if (!checkValidSecretKey) throw new Error('Secretkey not valid')
@@ -119,7 +119,7 @@ export class Encryption {
     return cipherData
   }
 
-  static async AES256Decrypt(secretKey: string, cipher: Buffer): Promise<Buffer> {
+  static AES256Decrypt(secretKey: string, cipher: Buffer): Buffer {
     const checkValidSecretKey: crypto.KeyObject = crypto.createSecretKey(Buffer.from(secretKey))
 
     if (!checkValidSecretKey) throw new Error('Secretkey not valid')
