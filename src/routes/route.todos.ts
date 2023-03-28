@@ -4,6 +4,7 @@ import { validator } from '@middlewares/middleware.validator'
 import { DTOTodosValidation } from '@dtos/dto.todos'
 import { authorization } from '@middlewares/middleware.authorization'
 import { signature } from '@middlewares/middleware.signature'
+import { authentication } from '@middlewares/middleware.authentication'
 
 export class RouteTodos {
   todos: InstanceType<typeof ControllerTodos>
@@ -15,11 +16,11 @@ export class RouteTodos {
   }
 
   main(): Router {
-    this.router.post('/', [authorization, signature, ...DTOTodosValidation.create(), validator], this.todos.create())
-    this.router.get('/', [authorization, signature], this.todos.findAll())
-    this.router.get('/:id', [authorization, signature, ...DTOTodosValidation.findById(), validator], this.todos.findById())
-    this.router.delete('/:id', [authorization, signature, ...DTOTodosValidation.deleteById(), validator], this.todos.deleteById())
-    this.router.put('/:id', [authorization, signature, ...DTOTodosValidation.updateById(), validator], this.todos.updateById())
+    this.router.post('/', [authentication, authorization, signature, ...DTOTodosValidation.create(), validator], this.todos.create())
+    this.router.get('/', [authentication, authorization, signature], this.todos.findAll())
+    this.router.get('/:id', [authentication, authorization, signature, ...DTOTodosValidation.findById(), validator], this.todos.findById())
+    this.router.delete('/:id', [authentication, authorization, signature, ...DTOTodosValidation.deleteById(), validator], this.todos.deleteById())
+    this.router.put('/:id', [authentication, authorization, signature, ...DTOTodosValidation.updateById(), validator], this.todos.updateById())
 
     return this.router
   }

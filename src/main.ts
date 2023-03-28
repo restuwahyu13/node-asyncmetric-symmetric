@@ -10,6 +10,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import compression from 'compression'
 import zlib from 'zlib'
+import CryptoJS from 'crypto-js'
 
 import * as knexfile from 'knexfile'
 import { RouteRoles } from '@routes/route.roles'
@@ -60,6 +61,11 @@ class App {
         threshold: Infinity
       })
     )
+    this.app.use((req, _, next) => {
+      const requestid: string = CryptoJS.AES.encrypt(process.env.REQUEST_CONTENT, process.env.REQUEST_SECRET_KEY).toString()
+      req.headers[`x-${process.env.NODE_ENV}-requestid`] = requestid
+      next()
+    })
     if (process.env.NODE_ENV !== 'production') {
       this.app.use(morgan('dev'))
     }
