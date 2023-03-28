@@ -1,6 +1,6 @@
 import 'express-async-errors'
 import 'dotenv/config'
-import express, { Express } from 'express'
+import express, { Express, NextFunction, Request, Response } from 'express'
 import http, { Server } from 'http'
 import knex, { Knex } from 'knex'
 import bodyparser from 'body-parser'
@@ -61,7 +61,7 @@ class App {
         threshold: Infinity
       })
     )
-    this.app.use((req, _, next) => {
+    this.app.use((req: Request, res: Response, next: NextFunction): void => {
       const requestid: string = CryptoJS.AES.encrypt(process.env.REQUEST_CONTENT, process.env.REQUEST_SECRET_KEY).toString()
       req.headers[`x-${process.env.NODE_ENV}-requestid`] = requestid
       next()
