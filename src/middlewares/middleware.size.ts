@@ -7,7 +7,7 @@ export const size = (size: number): Handler => {
   return async (req: Request, res: Response, next: NextFunction): Promise<OutgoingMessage> => {
     try {
       const headers: Record<string, any> = req.headers as any
-      if (!headers.hasOwnProperty('content-length')) throw apiResponse({ stat_code: status.FORBIDDEN, err_message: 'Content-Length required on headers' })
+      if (!headers.hasOwnProperty('content-length')) throw apiResponse({ stat_code: status.BAD_REQUEST, err_message: 'Content-Length required on headers' })
 
       const contentSize: number = +headers['content-length']
 
