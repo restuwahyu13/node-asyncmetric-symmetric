@@ -64,11 +64,8 @@ export class ServiceUsers {
         expired: `${+this.jwtExpired / 60} minutes`
       }
 
-      req['x'] = true
-
       return apiResponse({ stat_code: status.OK, stat_message: 'Login success', data: tokenMetadata })
     } catch (e: any) {
-      console.error(e.message)
       if (e instanceof Error) return apiResponse({ stat_code: status.INTERNAL_SERVER_ERROR, err_message: e.message })
       else return apiResponse(e)
     }
