@@ -16,7 +16,6 @@ import { RouteRoles } from '@routes/route.roles'
 import { RouteTodos } from '@routes/route.todos'
 import { RouteUsers } from '@routes/route.users'
 import { size } from '@middlewares/middleware.size'
-import { apiResponse } from '@helpers/helper.apiResponse'
 
 class App {
   private app: Express
