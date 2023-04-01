@@ -16,6 +16,7 @@ import * as knexfile from 'knexfile'
 import { RouteRoles } from '@routes/route.roles'
 import { RouteTodos } from '@routes/route.todos'
 import { RouteUsers } from '@routes/route.users'
+import { size } from '@middlewares/middleware.size'
 
 class App {
   private app: Express
@@ -40,15 +41,16 @@ class App {
   }
 
   private middleware(): void {
-    this.app.use(bodyparser.json({ limit: '1mb' }))
-    this.app.use(bodyparser.raw({ limit: '1mb' }))
-    this.app.use(bodyparser.urlencoded({ extended: false }))
+    this.app.use(size(1048576))
+    this.app.use(bodyparser.json())
+    this.app.use(bodyparser.raw())
+    this.app.use(bodyparser.urlencoded({ extended: true }))
     this.app.use(helmet())
     this.app.use(
       cors({
         origin: '*',
         methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH', 'OPTIONS', 'HEAD'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Timestamp', 'X-Signature'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Timestamp', 'X-Signature', `X-${process.env.NODE_ENV}-Requestid`],
         credentials: true
       })
     )

@@ -2,14 +2,13 @@ import status from 'http-status'
 import { QueryBuilder } from 'objection'
 import { Request } from 'express'
 import validator from 'validator'
-import moment from 'moment'
+import Emittery from 'events'
 
 import { Users } from '@models/model.users'
 import { Roles } from '@models/model.roles'
 import { Sessions } from '@models/model.sessions'
 import { IUsers } from '@interfaces/interface.users'
 import { IRoles } from '@interfaces/interface.roles'
-import { ISessions } from '@interfaces/interface.sessions'
 import { APIResponse, apiResponse } from '@helpers/helper.apiResponse'
 import { DTORegister, DTOLogin } from '@dtos/dto.users'
 import { Argon } from '@libs/lib.argon'
@@ -64,6 +63,8 @@ export class ServiceUsers {
         accessToken: token,
         expired: `${+this.jwtExpired / 60} minutes`
       }
+
+      req['x'] = true
 
       return apiResponse({ stat_code: status.OK, stat_message: 'Login success', data: tokenMetadata })
     } catch (e: any) {

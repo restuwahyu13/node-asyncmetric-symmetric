@@ -19,7 +19,7 @@ export const authentication = async (req: Request, res: Response, next: NextFunc
     delete req.headers[`x-${process.env.NODE_ENV}-requestid`]
     next()
   } catch (e: any) {
-    if (e instanceof Error) return res.status(status.UNAUTHORIZED).json(apiResponse({ stat_code: status.FORBIDDEN, err_message: `Can't access this resource` }))
+    if (e instanceof Error) return res.status(status.FORBIDDEN).json(apiResponse({ stat_code: status.FORBIDDEN, err_message: `Can't access this resource` }))
     else return res.status(e.stat_code).json(e)
   }
 }
