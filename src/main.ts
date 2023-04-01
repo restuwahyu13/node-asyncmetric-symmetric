@@ -16,6 +16,7 @@ import { RouteRoles } from '@routes/route.roles'
 import { RouteTodos } from '@routes/route.todos'
 import { RouteUsers } from '@routes/route.users'
 import { size } from '@middlewares/middleware.size'
+import { apiResponse } from '@helpers/helper.apiResponse'
 
 class App {
   private app: Express
@@ -83,7 +84,12 @@ class App {
   }
 
   private run(): void {
-    this.server.listen(process.env.PORT, () => console.info('Server is running on port: ', process.env.PORT))
+    this.server
+      .on('clientError', (err: Error) => {
+        if (err) console.error(err.message)
+        return
+      })
+      .listen(process.env.PORT, () => console.info('Server is running on port: ', process.env.PORT))
   }
 
   public main(): void {
