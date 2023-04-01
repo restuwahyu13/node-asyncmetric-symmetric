@@ -3,7 +3,6 @@ import 'dotenv/config'
 import express, { Express, NextFunction, Request, Response } from 'express'
 import http, { Server } from 'http'
 import knex, { Knex } from 'knex'
-import bodyparser from 'body-parser'
 import Objection from 'objection'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -42,9 +41,9 @@ class App {
 
   private middleware(): void {
     this.app.use(size(1048576))
-    this.app.use(bodyparser.json())
-    this.app.use(bodyparser.raw())
-    this.app.use(bodyparser.urlencoded({ extended: true }))
+    this.app.use(express.json())
+    this.app.use(express.raw())
+    this.app.use(express.urlencoded({ extended: true }))
     this.app.use(helmet())
     this.app.use(
       cors({
