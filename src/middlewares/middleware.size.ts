@@ -5,7 +5,7 @@ import rawBody from 'raw-body'
 
 import { apiResponse } from '@helpers/helper.apiResponse'
 
-// max request payload 9999999999999999999 , if  9999999999999999999 >= 9999999999999999999 up | -1 | not number value, nodejs auto close connection with 400 status code returning 1
+// max request payload 9999999999999999999, if  9999999999999999999 >= 9999999999999999999 up | -1 | not number value, nodejs auto close connection with 400 status code returning 1
 export const size = (size: number): Handler => {
   return async (req: Request, res: Response, next: NextFunction): Promise<OutgoingMessage> => {
     try {
