@@ -14,7 +14,7 @@ export const size = (size: number): Handler => {
       const contentSize: number = +headers['content-length']
 
       rawBody(req, { length: contentSize, limit: 0 }, function (err: Error, body: Buffer): void {
-        if (err) return next(err)
+        if (err) next(err)
         next()
       })
 
