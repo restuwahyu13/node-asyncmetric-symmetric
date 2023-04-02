@@ -88,7 +88,14 @@ class App {
   }
 
   private run(): void {
-    this.server.listen(process.env.PORT, () => console.info('Server is running on port: ', process.env.PORT))
+    this.server
+      .on('clientError', (err: Error) => {
+        if (err) process.stdout.write(`Client error: ${err.message}`)
+      })
+      .on('error', (err: Error) => {
+        if (err) process.stdout.write(`Server error: ${err.message}`)
+      })
+      .listen(process.env.PORT, () => console.info('Server is running on port: ', process.env.PORT))
   }
 
   public main(): void {
