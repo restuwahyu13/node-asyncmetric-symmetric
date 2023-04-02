@@ -21,7 +21,6 @@ export const size = (size: number): Handler => {
       if (!req.body || !req.query || !req.params || contentSize < 59) {
         if (contentSize <= 0) {
           res.status(413).json(apiResponse({ stat_code: 413, err_message: 'Content to many large' }))
-          next(false)
         } else {
           new Promise((resolve, _) => req.on('data', (chunk: Buffer): void => resolve(chunk.byteLength))).then((bodyLength: any): any => {
             try {
