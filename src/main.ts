@@ -40,7 +40,7 @@ class App {
   }
 
   private config(): void {
-    this.server.maxHeadersCount = 0
+    this.server.maxHeadersCount = 1048576
     this.server.headersTimeout = 900
     this.server.requestTimeout = 900
     this.server.keepAliveTimeout = 900
