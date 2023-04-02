@@ -10,7 +10,6 @@ import morgan from 'morgan'
 import compression from 'compression'
 import zlib from 'zlib'
 import CryptoJS from 'crypto-js'
-import raw from 'raw-body'
 
 import * as knexfile from 'knexfile'
 import { RouteRoles } from '@routes/route.roles'
