@@ -10,7 +10,7 @@
     "typeorm:seeding": "npm run ts-bin ./node_modules/typeorm-seeding/dist/cli.js",
     "typeorm:cli": "npm run ts-bin ./node_modules/typeorm/cli.js",
     "cleanup": "rimraf dist",
-    "start": "node dist/main.js",
+    "start": "node dist/main.js --max-http-header-size=999999999999999999999",
     "build": "npm run cleanup && npm run ts-bin:prod",
     "dev": "npm run ts-bin:dev",
     "kmig": "npx knex --cwd src --knexfile knexfile.ts migrate:latest",

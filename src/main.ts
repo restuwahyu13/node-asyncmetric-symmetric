@@ -10,6 +10,7 @@ import morgan from 'morgan'
 import compression from 'compression'
 import zlib from 'zlib'
 import CryptoJS from 'crypto-js'
+import raw from 'raw-body'
 
 import * as knexfile from 'knexfile'
 import { RouteRoles } from '@routes/route.roles'
@@ -39,11 +40,20 @@ class App {
     return this.knex
   }
 
+  private config(): void {
+    this.server.maxHeadersCount = 0
+    this.server.headersTimeout = 900
+    this.server.requestTimeout = 900
+    this.server.keepAliveTimeout = 900
+    this.app.disabled('x-powered-by')
+  }
+
   private middleware(): void {
     this.app.use(size(1048576))
     this.app.use(express.json())
     this.app.use(express.raw())
     this.app.use(express.urlencoded({ extended: true }))
+
     this.app.use(helmet())
     this.app.use(
       cors({
@@ -72,10 +82,6 @@ class App {
     }
   }
 
-  private config(): void {
-    this.app.disabled('x-powered-by')
-  }
-
   private route(): void {
     this.app.use('/role', this.roles.main())
     this.app.use('/todo', this.todos.main())
@@ -83,18 +89,13 @@ class App {
   }
 
   private run(): void {
-    this.server
-      .on('clientError', (err: Error) => {
-        if (err) process.stdout.write(err.message)
-        return
-      })
-      .listen(process.env.PORT, () => console.info('Server is running on port: ', process.env.PORT))
+    this.server.listen(process.env.PORT, () => console.info('Server is running on port: ', process.env.PORT))
   }
 
   public main(): void {
     this.connection()
-    this.middleware()
     this.config()
+    this.middleware()
     this.route()
     this.run()
   }
