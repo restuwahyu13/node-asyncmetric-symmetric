@@ -11,7 +11,7 @@ export const size = (size: number): Handler => {
     try {
       const headers: Record<string, any> = req.headers as any
       if (!headers.hasOwnProperty('content-length')) throw apiResponse({ stat_code: status.BAD_REQUEST, err_message: 'Content-Length required on headers' })
-      const contentSize: any = +headers['content-length']
+      const contentSize: number = +headers['content-length']
 
       rawBody(req, { length: contentSize, limit: 0 }, function (err: Error, body: Buffer) {
         if (err) return next(err)
